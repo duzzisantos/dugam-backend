@@ -1,1 +1,7 @@
-# dugam-backend
+# Dugam
+
+#Objectives
+
+#User Stories
+
+#Tools
