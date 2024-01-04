@@ -11,6 +11,7 @@ const UserAccount = new Schema(
       type: String,
       unique: true,
     },
+    userName: String,
     registeredBusinesses: [
       {
         businessID: String,

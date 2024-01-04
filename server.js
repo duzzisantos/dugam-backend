@@ -18,14 +18,11 @@ db.mongoose
     useUnifiedTopology: true,
   })
   .then(() => {
-    console.log("Orie database connected successfully!");
+    console.log("Connection established with database");
   })
   .catch((err) => {
     if (err) {
-      console.log(
-        "Orie database could not connect. Check parameters again!",
-        err
-      );
+      console.log("Database connection error!", err);
       process.exit();
     }
   });
@@ -36,7 +33,7 @@ var corsOptions = {
 //s*8#e%^#c*/u65)r(_+i@#t*/*/(y@^& parameters
 app.use(cors(corsOptions));
 app.use(express.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride());
 app.use(helmet());
 app.use(
