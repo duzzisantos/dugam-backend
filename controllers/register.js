@@ -1,45 +1,83 @@
 const Registered = require("../models/register");
-
-exports.create = (req, res) => {
+const User = require("../models/user");
+exports.createBusiness = async (req, res) => {
   if (!req.body) {
-    res.status(400).json({ message: "File cannot be empty" });
+    res.status(400).json({
+      message:
+        "Request body cannot be empty. You must fill the registration form!",
+    });
     return;
   }
 
-  //Create
-  const registered = new Registered({
-    ID: req.body.ID,
-    firstName: req.body.firstName,
-    lastName: req.body.lastName,
-    businessName: req.body.businessName,
-    address: req.body.address,
-    email: req.body.email,
-    businessPhone: req.body.businessPhone,
-    category: req.body.category,
-    photos: req.body.photos,
-  });
+  if (req.body.userName && req.body.userId && req.body.userEmail) {
+    const {
+      businessID,
+      firstName,
+      lastName,
+      businessName,
+      address,
+      email,
+      businessPhone,
+      category,
+      photos,
+      imageId,
+      image,
+    } = req.body;
+    const emailAddress = req.body.userEmail;
 
-  registered
-    .save(registered)
-    .then((data) => {
-      res.json(data);
-    })
-    .catch((err) => {
-      res
-        .status(500)
-        .json({ message: err.message || "Error in registering new vendor" });
-    });
+    try {
+      const foundUser = await User.findOne({ userEmail: emailAddress });
+      if (foundUser) {
+        await User.updateOne(
+          { userEmail: emailAddress },
+          {
+            $push: {
+              registeredBusinesses: {
+                businessID,
+                firstName,
+                lastName,
+                businessName,
+                address,
+                email,
+                businessPhone,
+                category,
+                photos: [{ imageId, image }],
+              },
+            },
+          }
+        );
+
+        res
+          .status(200)
+          .json({ message: "Successfully registered new business" });
+      } else {
+        res
+          .status(404)
+          .json({ message: "User was not found. Please try again." });
+      }
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Internal Server Error" });
+    }
+  } else {
+    res.status(400).json({ message: "Certain fields on the form are missing" });
+  }
 };
 
-//Read (all data)
-exports.findAll = (req, res) => {
+exports.findAll = async (req, res) => {
+  // //Read (all data)
+
   const vendorID = req.query.id;
   var condition = vendorID
-    ? { vendorID: { $regex: new RegExp(vendorID), $options: "i" } }
+    ? { $regex: new RegExp(vendorID), $options: "i" }
     : {};
-  Registered.find(condition)
+  User.find(condition)
     .then((data) => {
-      res.json(data);
+      //Return only registered business details - since they are open to the public for viewing
+      const enrolledBusinesses = data.map(
+        (element) => element.registeredBusinesses
+      );
+      res.json(enrolledBusinesses);
     })
     .catch((err) => {
       res
@@ -48,61 +86,59 @@ exports.findAll = (req, res) => {
     });
 };
 
-//Read (by ID)
+// exports.findOne = (req, res) => {
+//   const id = req.params.id;
+//   Registered.findById(id).then((data) => {
+//     !data
+//       ? res.status(500).json({ message: `Vendor not found!` })
+//       : res.json(data);
+//   });
+// };
 
-exports.findOne = (req, res) => {
-  const id = req.params.id;
-  Registered.findById(id).then((data) => {
-    !data
-      ? res.status(500).json({ message: `Vendor not found!` })
-      : res.json(data);
-  });
-};
+// //Update
+// exports.update = (req, res) => {
+//   const id = req.params.id;
+//   Registered.findByIdAndUpdate(id, { $set: req.body }, (err, data, next) => {
+//     if (err) {
+//       console.log(err);
+//       return next(err);
+//     } else {
+//       res.status(200).json(data);
+//       console.log(`Vendor information was updated successfully!`);
+//     }
+//   });
+// };
 
-//Update
-exports.update = (req, res) => {
-  const id = req.params.id;
-  Registered.findByIdAndUpdate(id, { $set: req.body }, (err, data, next) => {
-    if (err) {
-      console.log(err);
-      return next(err);
-    } else {
-      res.status(200).json(data);
-      console.log(`Vendor information was updated successfully!`);
-    }
-  });
-};
+// //Delete (One)
+// exports.delete = (req, res) => {
+//   const id = req.params.id;
+//   Registered.findByIdAndRemove(id)
+//     .then((data) => {
+//       !data
+//         ? res.status(404).json({ message: `ID ${id} not found!` })
+//         : res.status(200).json(data);
+//       console.log("Vendor information was deleted successfully!");
+//     })
+//     .catch((err) => {
+//       res.status(500).json({
+//         message: "Error in removing vendor information!" || err.message,
+//       });
+//     });
+// };
 
-//Delete (One)
-exports.delete = (req, res) => {
-  const id = req.params.id;
-  Registered.findByIdAndRemove(id)
-    .then((data) => {
-      !data
-        ? res.status(404).json({ message: `ID ${id} not found!` })
-        : res.status(200).json(data);
-      console.log("Vendor information was deleted successfully!");
-    })
-    .catch((err) => {
-      res.status(500).json({
-        message: "Error in removing vendor information!" || err.message,
-      });
-    });
-};
-
-//Delete (All) - Dangerous!
-exports.deleteAll = (req, res) => {
-  Registered.deleteMany({})
-    .then((data) => {
-      res.status(200).json({
-        message: "All vendors have been deleted!",
-        data,
-      });
-    })
-    .catch((err) => {
-      res.status(500).json({
-        message:
-          err.message || "Error occured in deleting all vendor information!",
-      });
-    });
-};
+// //Delete (All) - Dangerous!
+// exports.deleteAll = (req, res) => {
+//   Registered.deleteMany({})
+//     .then((data) => {
+//       res.status(200).json({
+//         message: "All vendors have been deleted!",
+//         data,
+//       });
+//     })
+//     .catch((err) => {
+//       res.status(500).json({
+//         message:
+//           err.message || "Error occured in deleting all vendor information!",
+//       });
+//     });
+// };

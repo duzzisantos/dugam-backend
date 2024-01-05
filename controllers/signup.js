@@ -23,7 +23,7 @@ exports.create = async (req, res) => {
 
 //Find customer by comparing email from auth and database
 exports.findOne = async (req, res) => {
-  const { userEmail } = req.body;
+  const userEmail = req.query.userEmail;
   UserSchema.find({ userEmail })
     .then((data) => {
       res.json(data);

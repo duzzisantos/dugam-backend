@@ -3,6 +3,6 @@ module.exports = (app) => {
   const user = require("../controllers/signup");
 
   router.post("/", user.create);
-  router.get("/:userEmail", user.findOne);
+  router.get("/", user.findOne);
   app.use("/api/signup", router);
 };
