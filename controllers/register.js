@@ -1,4 +1,3 @@
-const Registered = require("../models/register");
 const User = require("../models/user");
 exports.createBusiness = async (req, res) => {
   if (!req.body) {

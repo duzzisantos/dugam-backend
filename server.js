@@ -127,6 +127,7 @@ app.post("/register/photos", upload.single("photos"), (req, res, next) => {
 //REST API routes
 require("./routes/register")(app);
 require("./routes/signup")(app);
+require("./routes/followers")(app);
 // require("./routes/login")(app);
 
 const PORT = 8080;

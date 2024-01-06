@@ -31,7 +31,7 @@ const UserAccount = new Schema(
       {
         ratingsId: String,
         ratingsContent: String,
-        receivedBy: String,
+        ratedBy: String,
         ratingsDate: String,
       },
     ],
@@ -39,8 +39,10 @@ const UserAccount = new Schema(
       {
         followerId: String,
         followerName: String,
-        isBlocked: Boolean,
-        isUnfollowed: Boolean,
+        hasBlocked: Boolean,
+        hasUnfollowed: Boolean,
+        hasFollowed: Boolean,
+        hasReported: Boolean,
       },
     ],
     following: [
