@@ -37,8 +37,8 @@ const UserAccount = new Schema(
     ],
     followers: [
       {
-        followerId: String,
         followerName: String,
+        followDate: Number,
         hasBlocked: Boolean,
         hasUnfollowed: Boolean,
         hasFollowed: Boolean,
@@ -47,10 +47,8 @@ const UserAccount = new Schema(
     ],
     following: [
       {
-        followerId: String,
         followerName: String,
-        isBlocked: Boolean,
-        isUnfollowed: Boolean,
+        followDate: Number,
       },
     ],
     userContent: [
@@ -64,6 +62,7 @@ const UserAccount = new Schema(
             isUnliked: Boolean,
             likedUserName: String,
             likerUserId: String,
+            isBookmarked: Boolean,
           },
         ],
       },

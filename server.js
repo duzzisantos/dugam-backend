@@ -13,10 +13,7 @@ const bodyParser = require("body-parser"),
 
 //database connection settings
 db.mongoose
-  .connect(db.url ?? process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+  .connect(db.url ?? process.env.MONGO_URIn)
   .then(() => {
     console.log("Connection established with database");
   })
