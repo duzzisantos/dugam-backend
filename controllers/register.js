@@ -85,14 +85,16 @@ exports.findAll = async (req, res) => {
     });
 };
 
-// exports.findOne = (req, res) => {
-//   const id = req.params.id;
-//   Registered.findById(id).then((data) => {
-//     !data
-//       ? res.status(500).json({ message: `Vendor not found!` })
-//       : res.json(data);
-//   });
-// };
+exports.findOne = (req, res) => {
+  const emailAddress = req.query.userEmail;
+  if (emailAddress) {
+    User.findOne({ userEmail: emailAddress }).then((data) => {
+      !data
+        ? res.status(500).json({ message: `Vendor not found!` })
+        : res.json(data);
+    });
+  }
+};
 
 // //Update
 // exports.update = (req, res) => {

@@ -4,5 +4,6 @@ module.exports = (app) => {
 
   router.post("/", registration.createBusiness);
   router.get("/", registration.findAll);
+  router.get("/business-entity", registration.findOne);
   app.use("/api/register", router);
 };
