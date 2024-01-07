@@ -29,7 +29,6 @@ const UserAccount = new Schema(
     ],
     ratings: [
       {
-        ratingsId: String,
         ratingsContent: String,
         ratedBy: String,
         ratingsDate: String,
@@ -53,18 +52,17 @@ const UserAccount = new Schema(
     ],
     userContent: [
       {
-        contentId: String,
+        authorEmail: String,
+        authorName: String,
         contentBody: String,
         contentImage: String,
         likes: [
           {
-            likeId: String,
-            isUnliked: Boolean,
             likedUserName: String,
-            likerUserId: String,
-            isBookmarked: Boolean,
+            dateLiked: String,
           },
         ],
+        isBookmarked: Boolean,
       },
     ],
   },

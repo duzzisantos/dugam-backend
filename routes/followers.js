@@ -3,6 +3,7 @@ module.exports = (app) => {
   const follower = require("../controllers/followers");
   router.post("/", follower.followAnotherUser);
   router.post("/update-following", follower.updateFollowingList);
-  router.get("/", follower.followerList);
+  router.get("/get-followers", follower.followerList);
+  router.get("/get-following", follower.followingList);
   app.use("/api/followers", router);
 };

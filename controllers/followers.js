@@ -95,15 +95,33 @@ exports.updateFollowingList = async (req, res) => {
 };
 
 exports.followerList = async (req, res) => {
-  const id = req.query.id;
-  var condition = id ? { $regex: new RegExp(id), $options: "i" } : {};
+  const emailAddress = req.query.userEmail;
+  if (emailAddress) {
+    await User.find({ userEmail: emailAddress })
+      .then((data) => {
+        const followers = data.map((element) => element.followers);
+        res.json(followers);
+      })
+      .catch((err) =>
+        res
+          .status(500)
+          .json({ message: err.message ?? "Internal Server Error" })
+      );
+  }
+};
 
-  await User.find(condition)
-    .then((data) => {
-      const followers = data.map((element) => element.followers);
-      res.json(followers);
-    })
-    .catch((err) =>
-      res.status(500).json({ message: err.message ?? "Internal Server Error" })
-    );
+exports.followingList = async (req, res) => {
+  const emailAddress = req.query.userEmail;
+  if (emailAddress) {
+    await User.find({ userEmail: emailAddress })
+      .then((data) => {
+        const following = data.map((element) => element.following);
+        res.json(following);
+      })
+      .catch((err) =>
+        res
+          .status(500)
+          .json({ message: err.message ?? "Internal Server Error" })
+      );
+  }
 };

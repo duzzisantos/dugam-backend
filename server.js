@@ -7,13 +7,12 @@ const db = require("./models");
 const helmet = require("helmet");
 const methodOverride = require("method-override");
 const mongoSanitize = require("express-mongo-sanitize");
-const bodyParser = require("body-parser"),
-  fs = require("fs"),
-  multer = require("multer");
+
+(fs = require("fs")), (multer = require("multer"));
 
 //database connection settings
 db.mongoose
-  .connect(db.url ?? process.env.MONGO_URIn)
+  .connect(db.url ?? process.env.MONGO_URI)
   .then(() => {
     console.log("Connection established with database");
   })
@@ -72,19 +71,6 @@ app.use(
 app.use(helmet.noSniff()); //mitigates data sniffing by hackers
 app.use(helmet.xssFilter()); //prevents cross-site scripting
 
-app.post("/menu", (req, res) => {
-  res.render("menu");
-});
-
-app.get("/", (req, res) => {
-  res.json({
-    message: "Orie backend server: gets all data from server!",
-    Author: "Duzie Uche-Abba",
-  });
-});
-
-//http requests
-
 //Multer Image storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -125,7 +111,7 @@ app.post("/register/photos", upload.single("photos"), (req, res, next) => {
 require("./routes/register")(app);
 require("./routes/signup")(app);
 require("./routes/followers")(app);
-// require("./routes/login")(app);
+require("./routes/user-content")(app);
 
 const PORT = 8080;
 app.listen(PORT, (err) => {
