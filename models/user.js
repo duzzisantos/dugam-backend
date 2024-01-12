@@ -31,6 +31,7 @@ const UserAccount = new Schema(
       {
         ratingsContent: String,
         ratedBy: String,
+        ratingStars: Number,
         ratingsDate: String,
       },
     ],
