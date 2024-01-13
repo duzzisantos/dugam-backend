@@ -113,6 +113,7 @@ require("./routes/signup")(app);
 require("./routes/followers")(app);
 require("./routes/user-content")(app);
 require("./routes/ratings")(app);
+require("./routes/messages")(app);
 
 const PORT = 8080;
 app.listen(PORT, (err) => {

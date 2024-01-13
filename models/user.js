@@ -67,6 +67,20 @@ const UserAccount = new Schema(
         isBookmarked: Boolean,
       },
     ],
+    directMessages: [
+      {
+        sender: String,
+        subject: String,
+        sendDate: String,
+        messageBody: String,
+        replies: [
+          {
+            repliedBy: String,
+            replyDate: String,
+          },
+        ],
+      },
+    ],
   },
   { timestamps: true }
 );
