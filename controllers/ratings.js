@@ -13,7 +13,8 @@ exports.createRating = async (req, res) => {
   }
 
   if (req.body.userEmail) {
-    const { ratingsContent, ratedBy, ratingsDate, ratingStar } = req.body;
+    const { ratingsContent, ratedBy, ratingsDate, ratingStars, ratingsTitle } =
+      req.body;
 
     const emailAddress = req.body.userEmail;
 
@@ -27,10 +28,11 @@ exports.createRating = async (req, res) => {
           {
             $push: {
               ratings: {
+                ratingsTitle,
                 ratingsContent,
                 ratedBy,
                 ratingsDate,
-                ratingStar,
+                ratingStars,
               },
             },
           }
@@ -58,23 +60,20 @@ exports.createRating = async (req, res) => {
  * @param {object} res
  * returns an array of objects of all ratings pertaining to the customer whose email address is determined
  */
-exports.getAllRatings = (req, res) => {
-  const id = req.query.id;
-  var regex = id ? { $regex: new RegExp(id), $options: "i" } : {};
+exports.getAllRatings = async (req, res) => {
+  const emailAddress = req.query.userEmail;
+  if (emailAddress) {
+    await UserAccount.find({ userEmail: emailAddress })
+      .then((data) => {
+        const foundData = data.map((element) => element.ratings);
 
-  const emailAddress = req.body.emailAddress;
-  UserAccount.find(regex)
-    .then((data) => {
-      const foundData = data
-        .filter((item) => (item.userEmail === emailAddress ? item : !item))
-        .map((element) => element.ratings);
-
-      res.json(foundData);
-    })
-    .catch((err) => {
-      console.warn(err);
-      res.status(404).json({ message: "Ratings data not found" });
-    });
+        res.json(foundData.flat());
+      })
+      .catch((err) => {
+        console.warn(err);
+        res.status(404).json({ message: "Ratings data not found" });
+      });
+  }
 };
 
 /**
@@ -85,7 +84,8 @@ exports.getAllRatings = (req, res) => {
  */
 exports.updateOneRating = async (req, res) => {
   const emailAddress = req.body.emailAddress;
-  const { ratingsContent, ratingsDate, ratingsOwner, ratingStar } = req.body;
+  const { ratingsContent, ratingsDate, ratedBy, ratingStars, ratingsTitle } =
+    req.body;
 
   try {
     const foundUser = await UserAccount.findOne({ userEmail: emailAddress });
@@ -98,8 +98,9 @@ exports.updateOneRating = async (req, res) => {
             ratings: {
               ratingsContent,
               ratingsDate,
-              ratingsOwner,
-              ratingStar,
+              ratedBy,
+              ratingStars,
+              ratingsTitle,
             },
           },
         },
