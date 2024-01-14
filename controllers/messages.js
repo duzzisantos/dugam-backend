@@ -74,37 +74,28 @@ exports.getMessages = (req, res) => {
 exports.replyMessages = async (req, res) => {
   if (req.body.userEmail) {
     const { replyDate, replyMessages, repliedBy, replies } = req.body;
-    const emailAddress = req.body.userEmail;
+    const emailAddress = req.query.userEmail;
 
+    //We would be using the user email address and message object Id as query parameters in the FE
     try {
       const foundUser = await User.findOne({ userEmail: emailAddress });
       if (foundUser) {
-        // await User.updateOne(
-        //   { userEmail: emailAddress },
-        //   {
-        //     $push: {
-        //       directMessages: {
-        //         replies: [{ repliedBy, replyDate, replyMessages }],
-        //       },
-        //     },
-        //   }
-        // );
+        const messageId = req.query.id;
 
-        // res.status(200).json({ message: "Successfully replied message" });
-        const messages = foundUser.directMessages;
-        const id = req.query.id;
+        //find matching message based on queried ID and push a new reply
+        const toBeUpdated = foundUser.directMessages.find(
+          (item) => item._id.toString() === messageId
+        );
 
-        messages
-          .filter((item) => item._id === id)
-          .map((element) => element.replies)
-          .map((file) => ({
-            ...file,
+        if (toBeUpdated) {
+          toBeUpdated.replies.push({
             repliedBy: repliedBy,
             replyDate: replyDate,
             replyMessages: replyMessages,
-          }));
+          });
+        }
 
-        foundUser.save();
+        await foundUser.save();
       } else {
         res.status(404).json({ message: "User not found" });
       }
