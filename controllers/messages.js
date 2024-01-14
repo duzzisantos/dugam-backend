@@ -52,3 +52,66 @@ exports.createMessage = async (req, res) => {
     });
   }
 };
+
+exports.getMessages = (req, res) => {
+  const emailAddress = req.query.userEmail;
+
+  if (emailAddress) {
+    User.find({ userEmail: emailAddress })
+      .then((data) => {
+        const messagesData = data.map((item) => item.directMessages);
+        res.json(messagesData);
+      })
+      .catch((err) => {
+        console.error(err);
+        res.status(400).json({ message: "An error has occured." });
+      });
+  } else {
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+exports.replyMessages = async (req, res) => {
+  if (req.body.userEmail) {
+    const { replyDate, replyMessages, repliedBy, replies } = req.body;
+    const emailAddress = req.body.userEmail;
+
+    try {
+      const foundUser = await User.findOne({ userEmail: emailAddress });
+      if (foundUser) {
+        // await User.updateOne(
+        //   { userEmail: emailAddress },
+        //   {
+        //     $push: {
+        //       directMessages: {
+        //         replies: [{ repliedBy, replyDate, replyMessages }],
+        //       },
+        //     },
+        //   }
+        // );
+
+        // res.status(200).json({ message: "Successfully replied message" });
+        const messages = foundUser.directMessages;
+        const id = req.query.id;
+
+        messages
+          .filter((item) => item._id === id)
+          .map((element) => element.replies)
+          .map((file) => ({
+            ...file,
+            repliedBy: repliedBy,
+            replyDate: replyDate,
+            replyMessages: replyMessages,
+          }));
+
+        foundUser.save();
+      } else {
+        res.status(404).json({ message: "User not found" });
+      }
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  } else {
+    res.status(400).json({ message: "An error has occured" });
+  }
+};
