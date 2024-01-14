@@ -14,6 +14,7 @@ exports.createMessage = async (req, res) => {
       replies,
       repliedBy,
       replyDate,
+      replyBody,
     } = req.body;
 
     const emailAddress = req.body.userEmail;
@@ -30,7 +31,7 @@ exports.createMessage = async (req, res) => {
                   subject: subject,
                   sendDate: sendDate,
                   messageBody: messageBody,
-                  replies: [{ repliedBy, replyDate }],
+                  replies: [{ repliedBy, replyDate, replyBody }],
                 },
               },
             }
@@ -72,37 +73,34 @@ exports.getMessages = (req, res) => {
 };
 
 exports.replyMessages = async (req, res) => {
-  if (req.body.userEmail) {
-    const { replyDate, replyMessages, repliedBy, replies } = req.body;
-    const emailAddress = req.query.userEmail;
+  const { replyDate, replyBody, repliedBy } = req.body;
+  const userEmail = req.query.userEmail;
+  const messageId = req.query.id; // Assuming messageId is a route parameter
 
-    //We would be using the user email address and message object Id as query parameters in the FE
-    try {
-      const foundUser = await User.findOne({ userEmail: emailAddress });
-      if (foundUser) {
-        const messageId = req.query.id;
-
-        //find matching message based on queried ID and push a new reply
-        const toBeUpdated = foundUser.directMessages.find(
-          (item) => item._id.toString() === messageId
-        );
-
-        if (toBeUpdated) {
-          toBeUpdated.replies.push({
+  try {
+    const updatedUser = await User.findOneAndUpdate(
+      { userEmail: userEmail, "directMessages._id": messageId },
+      {
+        $push: {
+          "directMessages.$.replies": {
             repliedBy: repliedBy,
             replyDate: replyDate,
-            replyMessages: replyMessages,
-          });
-        }
+            replyBody: replyBody,
+          },
+        },
+      },
+      { new: true } // To return the updated document
+    );
 
-        await foundUser.save();
-      } else {
-        res.status(404).json({ message: "User not found" });
-      }
-    } catch (err) {
-      res.status(500).json({ message: "Internal server error" });
+    if (updatedUser) {
+      res.status(200).json({ message: "Successfully replied to the message" });
+    } else {
+      res
+        .status(404)
+        .json({ message: "Direct message not found or user not found" });
     }
-  } else {
-    res.status(400).json({ message: "An error has occured" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Internal server error" });
   }
 };

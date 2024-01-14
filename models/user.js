@@ -77,6 +77,7 @@ const UserAccount = new Schema(
           {
             repliedBy: String,
             replyDate: String,
+            replyBody: String,
           },
         ],
       },
