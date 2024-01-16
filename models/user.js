@@ -64,6 +64,13 @@ const UserAccount = new Schema(
             dateLiked: String,
           },
         ],
+        comments: [
+          {
+            commentBody: String,
+            commentDate: String,
+            commentBy: String,
+          },
+        ],
         isBookmarked: Boolean,
       },
     ],
