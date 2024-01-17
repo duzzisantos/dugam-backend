@@ -61,6 +61,7 @@ const UserAccount = new Schema(
         likes: [
           {
             likedUserName: String,
+            isUnliked: Boolean,
             dateLiked: String,
           },
         ],

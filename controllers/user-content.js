@@ -10,8 +10,15 @@ exports.createUserContent = async (req, res) => {
   }
 
   if (req.body.userEmail) {
-    const { contentBody, contentImage, isBookmarked, likes, likedUserName } =
-      req.body;
+    const {
+      contentBody,
+      contentImage,
+      isBookmarked,
+      likes,
+      likedUserName,
+      authorEmail,
+      authorName,
+    } = req.body;
 
     const emailAddress = req.body.userEmail;
 
@@ -24,6 +31,8 @@ exports.createUserContent = async (req, res) => {
           {
             $push: {
               userContent: {
+                authorEmail,
+                authorName,
                 contentBody,
                 contentImage,
                 likes: [{ likedUserName }],
@@ -81,8 +90,6 @@ exports.fetchAllPostsFromFollowedAccounts = (req, res) => {
 
     User.find(regex)
       .then((data) => {
-        const result = [];
-
         for (const element of data) {
           const followers = element.followers;
           const following = element.following;
@@ -93,25 +100,11 @@ exports.fetchAllPostsFromFollowedAccounts = (req, res) => {
                 emailAddress.match(new RegExp(x.followerName), "i") ||
                 emailAddress.match(new RegExp(y.followerName))
               ) {
-                const flattenedData = element.userContent
-                  .flat()
-                  .map((file) => ({
-                    authorEmail: element.userEmail,
-                    authorName: element.userName,
-                    authorImage: element.registeredBusinesses
-                      .map((el) => el.photos)
-                      .map((el) => el.image)[0],
-                    contentBody: file.contentBody,
-                    contentImage: file.contentImage,
-                  }));
-
-                result.push(flattenedData);
+                return res.json(element.userContent.flat());
               }
             }
           }
         }
-
-        res.json(result[0]);
       })
       .catch((err) => {
         res.status(404).json({
@@ -120,5 +113,127 @@ exports.fetchAllPostsFromFollowedAccounts = (req, res) => {
       });
   } else {
     res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+//Controller for replying timeline posts of followers and of those users whom the current user is following.
+exports.replyUserPost = async (req, res) => {
+  const emailAddress = req.query.userEmail;
+  const postId = req.query.id;
+
+  const { commentDate, commentBody, commentBy } = req.body;
+
+  try {
+    const userToReply = await User.findOneAndUpdate(
+      { userEmail: emailAddress, "userContent._id": postId },
+      {
+        $push: {
+          "userContent.$.comments": {
+            commentBody: commentBody,
+            commentBy: commentBy,
+            commentDate: commentDate,
+          },
+        },
+      },
+      { new: true }
+    );
+
+    if (userToReply) {
+      res.status(200).json({ message: "User post successfully replied." });
+    } else {
+      res
+        .status(404)
+        .json({ message: "Either user content or user was not found" });
+    }
+  } catch (err) {
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+//Gets comments for a particular post
+exports.getPostComments = (req, res) => {
+  const postId = req.query.id;
+  const emailAddress = req.query.userEmail;
+
+  User.findOne({ userEmail: emailAddress })
+    .then((data) => {
+      const specificUserContentComments = data.userContent.find(
+        (element) => element._id.toString() === postId
+      );
+
+      if (specificUserContentComments) {
+        res.json(specificUserContentComments.comments);
+      } else {
+        res
+          .status(404)
+          .json({ message: "Either Content or comments do not exist" });
+      }
+    })
+    .catch((err) => {
+      console.warn(err);
+    });
+};
+
+//Like comments for a particular post
+exports.sendLikePost = async (req, res) => {
+  const emailAddress = req.query.userEmail;
+  const postId = req.query.id;
+
+  const { likedUserName, dateLiked, isUnliked } = req.body;
+
+  try {
+    const userToReply = await User.findOneAndUpdate(
+      { userEmail: emailAddress, "userContent._id": postId },
+      {
+        $push: {
+          "userContent.$.likes": {
+            likedUserName: likedUserName,
+            dateLiked: dateLiked,
+            isUnliked: isUnliked,
+          },
+        },
+      },
+      { new: true }
+    );
+
+    if (userToReply) {
+      res.status(200).json({ message: "User post successfully liked." });
+    } else {
+      res
+        .status(404)
+        .json({ message: "Either user content or user was not found" });
+    }
+  } catch (err) {
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+//Set Bookmarks for a particular post
+exports.saveBookmark = async (req, res) => {
+  const emailAddress = req.query.userEmail;
+  const postId = req.query.id;
+
+  const { isBookmarked } = req.body;
+
+  try {
+    const userToReply = await User.findOneAndUpdate(
+      { userEmail: emailAddress, "userContent._id": postId },
+      {
+        $set: {
+          isBookmarked: isBookmarked,
+        },
+      },
+      { new: true }
+    );
+
+    if (userToReply) {
+      res.status(200).json({ message: "User post successfully liked." });
+    } else {
+      res
+        .status(404)
+        .json({ message: "Either user content or user was not found" });
+    }
+  } catch (err) {
+    res.status(500).json({ message: "Internal server error" });
   }
 };
