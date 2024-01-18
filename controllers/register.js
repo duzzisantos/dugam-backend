@@ -85,6 +85,70 @@ exports.findAll = async (req, res) => {
     });
 };
 
+//Make this modular
+exports.getAllBusinessCategories = (req, res) => {
+  const vendorID = req.query.id;
+  var condition = vendorID
+    ? { $regex: new RegExp(vendorID), $options: "i" }
+    : {};
+  User.find(condition)
+    .then((data) => {
+      //Return only unique business categories
+      const enrolledBusinesses = data.map((element) => [
+        ...new Set(element.registeredBusinesses.map((el) => el.category)),
+      ]);
+
+      res.json(enrolledBusinesses.flat());
+    })
+    .catch((err) => {
+      res
+        .status(500)
+        .json({ message: err.message || "Error in retrieving all categories" });
+    });
+};
+
+exports.getAllCities = (req, res) => {
+  const vendorID = req.query.id;
+  var condition = vendorID
+    ? { $regex: new RegExp(vendorID), $options: "i" }
+    : {};
+  User.find(condition)
+    .then((data) => {
+      //Return only unique business categories
+      const enrolledBusinesses = data.map((element) => [
+        ...new Set(element.registeredBusinesses.map((el) => el.city)),
+      ]);
+
+      res.json(enrolledBusinesses.flat());
+    })
+    .catch((err) => {
+      res
+        .status(500)
+        .json({ message: err.message || "Error in retrieving all categories" });
+    });
+};
+
+exports.getAllStates = (req, res) => {
+  const vendorID = req.query.id;
+  var condition = vendorID
+    ? { $regex: new RegExp(vendorID), $options: "i" }
+    : {};
+  User.find(condition)
+    .then((data) => {
+      //Return only unique business categories
+      const enrolledBusinesses = data.map((element) => [
+        ...new Set(element.registeredBusinesses.map((el) => el.state)),
+      ]);
+
+      res.json(enrolledBusinesses.flat());
+    })
+    .catch((err) => {
+      res
+        .status(500)
+        .json({ message: err.message || "Error in retrieving all categories" });
+    });
+};
+
 exports.findOne = (req, res) => {
   const emailAddress = req.query.userEmail;
   if (emailAddress) {

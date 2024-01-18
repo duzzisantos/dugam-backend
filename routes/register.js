@@ -5,5 +5,8 @@ module.exports = (app) => {
   router.post("/", registration.createBusiness);
   router.get("/", registration.findAll);
   router.get("/business-entity", registration.findOne);
+  router.get("/categories", registration.getAllBusinessCategories);
+  router.get("/cities", registration.getAllCities);
+  router.get("/regions", registration.getAllStates);
   app.use("/api/register", router);
 };

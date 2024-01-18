@@ -90,21 +90,24 @@ exports.fetchAllPostsFromFollowedAccounts = (req, res) => {
 
     User.find(regex)
       .then((data) => {
+        const output = [];
         for (const element of data) {
           const followers = element.followers;
           const following = element.following;
 
-          for (const x of followers) {
-            for (const y of following) {
+          for (const item of followers) {
+            for (const file of following) {
               if (
-                emailAddress.match(new RegExp(x.followerName), "i") ||
-                emailAddress.match(new RegExp(y.followerName))
+                (emailAddress.includes(file.followerName) ||
+                  emailAddress.includes(item.followerName)) &&
+                item.hasFollowed === true
               ) {
-                return res.json(element.userContent.flat());
+                output.push(element.userContent);
               }
             }
           }
         }
+        return res.json(output.flat());
       })
       .catch((err) => {
         res.status(404).json({
