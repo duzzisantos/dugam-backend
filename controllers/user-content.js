@@ -98,8 +98,8 @@ exports.fetchAllPostsFromFollowedAccounts = (req, res) => {
           for (const item of followers) {
             for (const file of following) {
               if (
-                (emailAddress.includes(file.followerName) ||
-                  emailAddress.includes(item.followerName)) &&
+                emailAddress.includes(file.followerName) &&
+                emailAddress.includes(item.followerName) &&
                 item.hasFollowed === true
               ) {
                 output.push(element.userContent);
