@@ -50,6 +50,11 @@ const UserAccount = new Schema(
       {
         followerName: String,
         followDate: Number,
+        hasBlocked: Boolean,
+        hasUnfollowed: Boolean,
+        hasFollowed: Boolean,
+        hasReported: Boolean,
+        reportHistory: [{ report: String, recommendation: String }],
       },
     ],
     userContent: [
@@ -62,6 +67,7 @@ const UserAccount = new Schema(
           {
             likedUserName: String,
             isUnliked: Boolean,
+            isLiked: Boolean,
             dateLiked: String,
           },
         ],
@@ -72,7 +78,6 @@ const UserAccount = new Schema(
             commentBy: String,
           },
         ],
-        isBookmarked: Boolean,
       },
     ],
     directMessages: [
