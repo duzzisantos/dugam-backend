@@ -9,5 +9,6 @@ module.exports = (app) => {
   router.get("/", user.getAllUserPosts);
   router.get("/comments", user.getPostComments);
   router.get("/subscribed-content", user.fetchAllPostsFromFollowedAccounts);
+  router.get("/suggested-follows", user.suggestedFollowers);
   app.use("/api/user-posts", router);
 };

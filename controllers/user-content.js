@@ -240,3 +240,42 @@ exports.saveBookmark = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+//Returns to us the users whom they current user is not following yet...
+exports.suggestedFollowers = async (req, res) => {
+  try {
+    const emailAddress = req.query.userEmail;
+
+    if (!emailAddress) {
+      return res.status(500).json({ message: "Internal Server Error" });
+    }
+
+    const id = req.query.id;
+    const regex = id ? { $regex: new RegExp(id), $options: "i" } : {};
+
+    const data = await User.find(regex);
+
+    const output = [];
+
+    for (const item of data) {
+      const isFollowing = item.following.some(
+        (el) => el.followerName === emailAddress
+      );
+
+      const isFollower = item.followers.some(
+        (el) => el.followerName === emailAddress
+      );
+
+      if (!isFollower && !isFollowing) {
+        output.push(item.registeredBusinesses); // Push the user object instead of registered businesses
+      }
+    }
+
+    const suggestedFollowers = output.slice(0, 5);
+    res.json(suggestedFollowers.flat());
+  } catch (err) {
+    res.status(404).json({
+      message: err.message || "User not found or no relationship with user",
+    });
+  }
+};
