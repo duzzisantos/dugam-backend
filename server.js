@@ -26,7 +26,7 @@ var corsOptions = {
   origin: "http://localhost:3000/",
 };
 
-//s*8#e%^#c*/u65)r(_+i@#t*/*/(y@^& parameters
+//security parameters
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -114,6 +114,7 @@ require("./routes/followers")(app);
 require("./routes/user-content")(app);
 require("./routes/ratings")(app);
 require("./routes/messages")(app);
+require("./routes/business-query")(app);
 
 const PORT = 8080;
 app.listen(PORT, (err) => {
