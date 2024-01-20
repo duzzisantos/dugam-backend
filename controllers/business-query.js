@@ -15,7 +15,7 @@ exports.getBusinessByAnyParameter = (req, res) => {
         "\\$&"
       );
 
-      // Create a case-insensitive regular expression with word boundary
+      // create a case-insensitive regular expression with word boundary
       const regex = new RegExp("\\b" + escapedSearchTerm + "\\b", "i");
 
       for (const business of data) {
@@ -37,7 +37,7 @@ exports.getBusinessByAnyParameter = (req, res) => {
             output.push(business.registeredBusinesses);
           }
         } else {
-          res.status(404).json({ message: "Business not found" }); /// rEMOVE THIS FEEDBACK IF IT FAILS THE APP
+          res.status(404).json({ message: "Business not found" }); // remove this feedback if it fails the app
         }
       }
       res.json(output.flat());
