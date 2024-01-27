@@ -81,40 +81,31 @@ exports.getAllUserPosts = (req, res) => {
 };
 
 //Find all posts from subscribed-to users
-exports.fetchAllPostsFromFollowedAccounts = (req, res) => {
-  const emailAddress = req.query.userEmail;
+exports.fetchAllPostsFromFollowedAccounts = async (req, res) => {
+  try {
+    const emailAddress = req.query.userEmail;
+    const getUsers = await User.find();
 
-  if (emailAddress) {
-    const id = req.query.id;
-    var regex = id ? { $regex: new RegExp(id), $options: "i" } : {};
+    if (emailAddress) {
+      const output = [];
+      getUsers.map((data) => {
+        const follower = data.followers.some(
+          (el) => el.followerName === emailAddress
+        );
+        const following = data.following.some(
+          (el) => el.followerName === emailAddress
+        );
 
-    User.find(regex)
-      .then((data) => {
-        const output = [];
-        for (const element of data) {
-          const followers = element?.followers;
-          const following = element?.following;
-
-          for (const item of followers) {
-            for (const file of following) {
-              if (
-                emailAddress.includes(file?.followerName) ||
-                emailAddress.includes(item?.followerName)
-              ) {
-                output.push(element.userContent);
-              }
-            }
-          }
+        if (follower || following) {
+          output.push(data.userContent);
         }
-        return res.json(output.flat());
-      })
-      .catch((err) => {
-        res.status(404).json({
-          message: err.message || "User not found or no relationship with user",
-        });
       });
-  } else {
-    res.status(500).json({ message: "Internal Server Error" });
+      return res.json(output.flat());
+    } else {
+      res.status(404).json({ message: "Not found" });
+    }
+  } catch (err) {
+    res.status(500).json({ message: err });
   }
 };
 
