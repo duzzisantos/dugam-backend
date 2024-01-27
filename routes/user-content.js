@@ -5,6 +5,7 @@ module.exports = (app) => {
   router.post("/", user.createUserContent);
   router.post("/reply", user.replyUserPost);
   router.post("/like-post", user.sendLikePost);
+  router.post("/unlike-post", user.unlikePost);
   router.post("/save-bookmark", user.saveBookmark);
   router.get("/", user.getAllUserPosts);
   router.get("/comments", user.getPostComments);

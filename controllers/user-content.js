@@ -80,20 +80,21 @@ exports.getAllUserPosts = (req, res) => {
   }
 };
 
-//Find all posts from subscribed-to users
+//Find all posts where current user's idnetification is found in either the follower or following lists of registered users
+//If that is so - then that means one or both parties are following the other - therefore subscribe to their content.
 exports.fetchAllPostsFromFollowedAccounts = async (req, res) => {
   try {
-    const emailAddress = req.query.userEmail;
+    const currentUser = req.query.userEmail;
     const getUsers = await User.find();
 
-    if (emailAddress) {
+    if (currentUser) {
       const output = [];
       getUsers.map((data) => {
         const follower = data.followers.some(
-          (el) => el.followerName === emailAddress
+          (el) => el.followerName === currentUser
         );
         const following = data.following.some(
-          (el) => el.followerName === emailAddress
+          (el) => el.followerName === currentUser
         );
 
         if (follower || following) {
@@ -172,7 +173,7 @@ exports.sendLikePost = async (req, res) => {
   const emailAddress = req.query.userEmail;
   const postId = req.query.id;
 
-  const { likedUserName, dateLiked, isUnliked } = req.body;
+  const { likedUserName, dateLiked } = req.body;
 
   try {
     const userToReply = await User.findOneAndUpdate(
@@ -182,7 +183,8 @@ exports.sendLikePost = async (req, res) => {
           "userContent.$.likes": {
             likedUserName: likedUserName,
             dateLiked: dateLiked,
-            isUnliked: isUnliked,
+            isUnliked: false,
+            isLiked: true,
           },
         },
       },
@@ -191,6 +193,41 @@ exports.sendLikePost = async (req, res) => {
 
     if (userToReply) {
       res.status(200).json({ message: "User post successfully liked." });
+    } else {
+      res
+        .status(404)
+        .json({ message: "Either user content or user was not found" });
+    }
+  } catch (err) {
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+//Prevents double likes from same current user, by updating the likes object's isLiked property to false and isUnliked to true
+exports.unlikePost = async (req, res) => {
+  const emailAddress = req.query.userEmail;
+  const postId = req.query.id;
+
+  const { likedUserName, dateLiked } = req.body;
+
+  try {
+    const userToReply = await User.findOneAndUpdate(
+      { userEmail: emailAddress, "userContent._id": postId },
+      {
+        $set: {
+          "userContent.$.likes": {
+            likedUserName: likedUserName,
+            dateLiked: dateLiked,
+            isUnliked: true,
+            isLiked: false,
+          },
+        },
+      },
+      { new: true }
+    );
+
+    if (userToReply) {
+      res.status(200).json({ message: "User post successfully unliked." });
     } else {
       res
         .status(404)
