@@ -149,14 +149,17 @@ exports.getAllStates = (req, res) => {
     });
 };
 
-exports.findOne = (req, res) => {
-  const emailAddress = req.query.userEmail;
-  if (emailAddress) {
-    User.findOne({ userEmail: emailAddress }).then((data) => {
-      !data
-        ? res.status(500).json({ message: `Vendor not found!` })
-        : res.json(data);
-    });
+exports.findOne = async (req, res) => {
+  try {
+    const emailAddress = req.query.userEmail;
+    if (emailAddress) {
+      const foundUser = await User.findOne({ userEmail: emailAddress });
+      res.json(foundUser.registeredBusinesses);
+    } else {
+      res.status(404).json({ message: "User not Found" });
+    }
+  } catch (err) {
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
