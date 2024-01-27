@@ -54,6 +54,65 @@ exports.followAnotherUser = async (req, res) => {
   }
 };
 
+exports.blockAnotherUser = async (req, res) => {
+  try {
+    if (!req.body) {
+      atus(400).json({ message: "Bad Request. Body cannot be empty" });
+    }
+
+    const blockee = req.query.blockee;
+    const blocker = req.query.blocker;
+
+    if (blockee) {
+      //find bother the blocking user and user being blocked to make sure that they unfollow each other
+      const userToBeBlocked = await User.findOne({ userEmail: blockee });
+      const userInitiatingBlock = await User.findOne({ userEmail: blocker });
+
+      const modifyBlockeeFollowers = userToBeBlocked.followers.find((person) =>
+        person.followerName.includes(blocker)
+      );
+
+      const modifyBlockerFollowers = userInitiatingBlock.followers.find(
+        (person) => person.followerName.includes(blockee)
+      );
+
+      //Makes sure that as current user blocks another user, both of their follower records are deleted
+      if (modifyBlockeeFollowers && modifyBlockerFollowers) {
+        //On the blockee's side
+        userToBeBlocked.followers.splice(
+          userToBeBlocked.followers.indexOf(modifyBlockeeFollowers),
+          1
+        );
+
+        userToBeBlocked.following.splice(
+          userToBeBlocked.following.indexOf(modifyBlockeeFollowers),
+          1
+        );
+
+        //On the blcoker's side
+        userInitiatingBlock.followers.splice(
+          userInitiatingBlock.followers.indexOf(modifyBlockerFollowers),
+          1
+        );
+
+        userInitiatingBlock.following.splice(
+          userInitiatingBlock.following.indexOf(modifyBlockerFollowers),
+          1
+        );
+
+        await userToBeBlocked.save();
+        await userInitiatingBlock.save();
+
+        res.status(200).json({ message: "User successfully blocked" });
+      } else {
+        res.status(404).JSON({ message: "The users to block were not found" });
+      }
+    }
+  } catch (err) {
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 //Iterates through the list find how many users in whose followers list another user's information exists. If found,
 //the following list is populated with their follower information
 exports.updateFollowingList = async (req, res) => {
