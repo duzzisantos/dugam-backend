@@ -9,12 +9,16 @@ const ReportLogs = new Schema(
     },
     reportedContentBody: String,
     reportedContentAuthor: String,
-    reportedUserId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-    },
+    reportedUserEmail: String,
     sentimentAnalysis: [
-      { score: Number, comparative: Number, verdict: String },
+      {
+        score: Number,
+        comparative: Number,
+        tokens: [String],
+        words: [String],
+        positive: [String],
+        negative: [String],
+      },
     ],
   },
   { timestamps: true }
