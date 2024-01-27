@@ -12,6 +12,7 @@ exports.createReport = async (req, res) => {
 
     const email = req.query.userEmail;
     const contentId = req.query.id;
+    const reportedBy = req.query.reportedBy;
 
     const foundUser = await User.findOne({ userEmail: email });
 
@@ -23,6 +24,7 @@ exports.createReport = async (req, res) => {
       if (foundContent) {
         const sentiment = new Sentiment();
         const report = new Report({
+          reportedBy: reportedBy,
           reportedContentAuthor: foundContent.authorName,
           reportedContentBody: foundContent.contentBody,
           reportedContentId: foundContent.id,

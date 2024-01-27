@@ -3,6 +3,7 @@ const Schema = mongoose.Schema;
 
 const ReportLogs = new Schema(
   {
+    reportedBy: String,
     reportedContentId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
