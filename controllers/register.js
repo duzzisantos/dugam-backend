@@ -160,19 +160,32 @@ exports.findOne = (req, res) => {
   }
 };
 
-// //Update
-// exports.update = (req, res) => {
-//   const id = req.params.id;
-//   Registered.findByIdAndUpdate(id, { $set: req.body }, (err, data, next) => {
-//     if (err) {
-//       console.log(err);
-//       return next(err);
-//     } else {
-//       res.status(200).json(data);
-//       console.log(`Vendor information was updated successfully!`);
-//     }
-//   });
-// };
+// //Update registered business
+exports.update = async (req, res) => {
+  if (req.body) {
+    try {
+      const emailAddress = req.query.userEmail;
+      if (emailAddress) {
+        const foundUser = await User.findOne({ userEmail: emailAddress });
+
+        if (foundUser) {
+          const registeredBusinesses = foundUser.registeredBusinesses;
+          registeredBusinesses.splice(0, 1);
+          registeredBusinesses.push(req.body);
+
+          await foundUser.save();
+          res.json(registeredBusinesses);
+        } else {
+          res.status(404).json({ message: "Registered business not found" });
+        }
+      }
+    } catch (err) {
+      res.status(500).json({ message: "Internal Server Error" });
+    }
+  } else {
+    res.status(400).json({ message: "Request body cannot be empty." });
+  }
+};
 
 // //Delete (One)
 // exports.delete = (req, res) => {

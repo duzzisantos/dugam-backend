@@ -47,7 +47,7 @@ exports.getBusinessByAnyParameter = (req, res) => {
     });
 };
 
-//performs narrow exact search to filter out customers who are fall under a specific region/state, city and business category
+//performs narrow exact search to filter out customers who fall under a specific region/state, city and business category
 exports.getBusinessByLimitedSearch = (req, res) => {
   const { region, city, category } = req.query;
 

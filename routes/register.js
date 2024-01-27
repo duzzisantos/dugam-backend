@@ -3,6 +3,7 @@ module.exports = (app) => {
   const registration = require("../controllers/register");
 
   router.post("/", registration.createBusiness);
+  router.post("/edit", registration.update);
   router.get("/", registration.findAll);
   router.get("/business-entity", registration.findOne);
   router.get("/categories", registration.getAllBusinessCategories);
