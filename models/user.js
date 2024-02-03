@@ -34,6 +34,7 @@ const UserAccount = new Schema(
         ratedBy: String,
         ratingStars: Number,
         ratingsDate: String,
+        ratingsOwner: String,
       },
     ],
     followers: [

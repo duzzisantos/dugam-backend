@@ -1,5 +1,6 @@
 const User = require("../models/user");
 const Report = require("../models/report-logs");
+const { getDelayedFeedback } = require("../utilities/getDelayedFeedback");
 const Sentiment = require("sentiment");
 
 exports.createReport = async (req, res) => {
@@ -46,6 +47,7 @@ exports.createReport = async (req, res) => {
           .save(report)
           .then((data) => {
             res.json(data);
+            return getDelayedFeedback(data, User);
           })
           .catch((err) => console.warn(err.message));
       } else {

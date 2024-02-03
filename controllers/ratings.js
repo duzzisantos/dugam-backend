@@ -13,8 +13,14 @@ exports.createRating = async (req, res) => {
   }
 
   if (req.body.userEmail) {
-    const { ratingsContent, ratedBy, ratingsDate, ratingStars, ratingsTitle } =
-      req.body;
+    const {
+      ratingsContent,
+      ratedBy,
+      ratingsDate,
+      ratingStars,
+      ratingsTitle,
+      ratedUser,
+    } = req.body;
 
     const emailAddress = req.body.userEmail;
 
@@ -33,6 +39,7 @@ exports.createRating = async (req, res) => {
                 ratedBy,
                 ratingsDate,
                 ratingStars,
+                ratedUser,
               },
             },
           }
