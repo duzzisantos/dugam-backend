@@ -47,7 +47,7 @@ exports.createReport = async (req, res) => {
           .save(report)
           .then((data) => {
             res.json(data);
-            return getDelayedFeedback(data, User);
+            return getDelayedFeedback(data, User); //return automated investigation feedback to the user who reported content - after 1 hour
           })
           .catch((err) => console.warn(err.message));
       } else {
