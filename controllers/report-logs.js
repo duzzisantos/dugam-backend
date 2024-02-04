@@ -24,6 +24,7 @@ exports.createReport = async (req, res) => {
 
       if (foundContent) {
         const sentiment = new Sentiment();
+        const analysis = sentiment.analyze(foundContent.contentBody);
         const report = new Report({
           reportedBy: reportedBy,
           reportedContentAuthor: foundContent.authorName,
@@ -32,13 +33,12 @@ exports.createReport = async (req, res) => {
           reportedUserEmail: foundContent.authorEmail,
           sentimentAnalysis: [
             {
-              comparative: sentiment.analyze(foundContent.contentBody)
-                .comparative,
-              score: sentiment.analyze(foundContent.contentBody).score,
-              tokens: sentiment.analyze(foundContent.contentBody).tokens,
-              words: sentiment.analyze(foundContent.contentBody).words,
-              positive: sentiment.analyze(foundContent.contentBody).positive,
-              negative: sentiment.analyze(foundContent.contentBody).negative,
+              comparative: analysis.comparative,
+              score: analysis.score,
+              tokens: analysis.tokens,
+              words: analysis.words,
+              positive: analysis.positive,
+              negative: analysis.negative,
             },
           ],
         });
