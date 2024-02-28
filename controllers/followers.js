@@ -1,114 +1,122 @@
 const User = require("../models/user");
 
+//Current user follows another user, then their following list is updated, while the second party's followers list is updated with current user's account details/id
 exports.followAnotherUser = async (req, res) => {
-  if (!req.body) {
-    res.status(400).json({
-      message:
-        "Request body cannot be empty. Following request needs a request header",
-    });
-    return;
-  }
-
-  if (req.body.userEmail) {
-    const {
-      followerName,
-      hasReported,
-      hasUnfollowed,
-      hasFollowed,
-      hasBlocked,
-    } = req.body;
-
-    const emailAddress = req.body.userEmail;
-
-    try {
-      const userToBeFollowed = await User.findOne({ userEmail: emailAddress });
-      if (userToBeFollowed) {
-        //Update user's followers list
-        await User.updateOne(
-          { userEmail: emailAddress },
-          {
-            $push: {
-              followers: {
-                followerName,
-                hasReported,
-                hasUnfollowed,
-                hasFollowed,
-                hasBlocked,
-              },
-            },
-          }
-        );
-
-        res.status(200).json({ message: "Successfully followed another user" });
-      } else {
-        res
-          .status(404)
-          .json({ message: "User was not found. Please try again." });
-      }
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ message: "Internal Server Error" });
+  const session = await User.startSession();
+  session.startTransaction();
+  try {
+    if (!req.query.secondParty || !req.query.currentUser) {
+      return res.status(400).json({
+        message:
+          "Request cannot be empty. Current User and Second Party missing",
+      });
     }
-  } else {
-    res.status(400).json({ message: "Certain fields on the form are missing" });
+
+    const { secondParty, currentUser } = req.query;
+
+    await User.updateOne(
+      { userEmail: secondParty },
+      {
+        $push: {
+          followers: { followerName: currentUser, isFollower: true },
+        },
+      },
+      { session }
+    );
+
+    await User.updateOne(
+      { userEmail: currentUser },
+      {
+        $push: {
+          following: { followerName: secondParty, isFollowing: true },
+        },
+      },
+      { session }
+    );
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(200).json({ message: "Followed user successfully" });
+  } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
+    console.error(err);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
+//Remove second party from current user's following list and current user from second party's follower's list
+//To initiate blocking
+
 exports.blockAnotherUser = async (req, res) => {
+  const session = await User.startSession();
+  session.startTransaction();
+
   try {
-    if (!req.body) {
-      atus(400).json({ message: "Bad Request. Body cannot be empty" });
+    if (!req.query.currentUser || !req.query.secondParty) {
+      req.status(400).json({
+        message: "Bad Request. Query requires current user and second party.",
+      });
     }
 
-    const blockee = req.query.blockee;
-    const blocker = req.query.blocker;
+    const { currentUser, secondParty } = req.query;
 
-    if (blockee) {
-      //find bother the blocking user and user being blocked to make sure that they unfollow each other
-      const userToBeBlocked = await User.findOne({ userEmail: blockee });
-      const userInitiatingBlock = await User.findOne({ userEmail: blocker });
+    await User.updateOne(
+      { userEmail: currentUser },
+      {
+        $pull: {
+          following: { followerName: secondParty },
+        },
+      },
+      { session }
+    );
 
-      const modifyBlockeeFollowers = userToBeBlocked.followers.find((person) =>
-        person.followerName.includes(blocker)
-      );
+    await User.updateOne(
+      { userEmail: secondParty },
+      {
+        $pull: {
+          followers: { followerName: currentUser },
+        },
+      },
+      { session }
+    );
 
-      const modifyBlockerFollowers = userInitiatingBlock.followers.find(
-        (person) => person.followerName.includes(blockee)
-      );
+    await session.commitTransaction();
+    session.endSession();
 
-      //Makes sure that as current user blocks another user, both of their follower records are deleted
-      if (modifyBlockeeFollowers && modifyBlockerFollowers) {
-        //On the blockee's side
-        userToBeBlocked.followers.splice(
-          userToBeBlocked.followers.indexOf(modifyBlockeeFollowers),
-          1
-        );
-
-        userToBeBlocked.following.splice(
-          userToBeBlocked.following.indexOf(modifyBlockeeFollowers),
-          1
-        );
-
-        //On the blcoker's side
-        userInitiatingBlock.followers.splice(
-          userInitiatingBlock.followers.indexOf(modifyBlockerFollowers),
-          1
-        );
-
-        userInitiatingBlock.following.splice(
-          userInitiatingBlock.following.indexOf(modifyBlockerFollowers),
-          1
-        );
-
-        await userToBeBlocked.save();
-        await userInitiatingBlock.save();
-
-        res.status(200).json({ message: "User successfully blocked" });
-      } else {
-        res.status(404).JSON({ message: "The users to block were not found" });
-      }
-    }
+    res.status(200).json({ message: "Successfully blocked user" });
   } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+//Unfollow one user who  is
+exports.unfollowOneUser = async (req, res) => {
+  try {
+    if (!req.query.secondParty || !req.query.currentUser) {
+      return res.status(400).json({
+        message:
+          "Request cannot be empty. Current User and Second Party missing",
+      });
+    }
+
+    const { secondParty, currentUser } = req.query;
+
+    await User.updateOne(
+      { userEmail: currentUser },
+      {
+        $pull: {
+          following: { followerName: secondParty, isFollowing: false },
+        },
+      }
+    );
+
+    res.status(200).json({ message: "Unfollowed successfully" });
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
@@ -119,7 +127,7 @@ exports.updateFollowingList = async (req, res) => {
   try {
     if (!req.body) {
       return res.status(400).json({
-        message: "Request body is missing or does not contain userEmail.",
+        message: "Request body is missing or does not contain parameters.",
       });
     }
 
