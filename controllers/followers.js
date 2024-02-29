@@ -226,16 +226,18 @@ exports.getSuggestedFollows = async (req, res) => {
         ];
 
         const businessWithFewDetails = clientBusiness.map((el) => ({
+          //this is the whole point. We do not want to render unnecessary data
           businessName: el.businessName,
           category: el.category,
           email: el.email,
         }));
 
-        if (
-          followers.some((person) => person.follower === currentUser) &&
+        if (followers.some((person) => person.follower === currentUser)) {
+          return [];
+        } else if (
           following.some((person) => person.follower === currentUser)
         ) {
-          return suggested;
+          return [];
         } else {
           suggested.push(businessWithFewDetails);
         }
