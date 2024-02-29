@@ -91,10 +91,10 @@ exports.fetchAllPostsFromFollowedAccounts = async (req, res) => {
       const output = [];
       getUsers.map((data) => {
         const follower = data.followers.some(
-          (el) => el.followerName === currentUser
+          (el) => el.follower === currentUser
         );
         const following = data.following.some(
-          (el) => el.followerName === currentUser
+          (el) => el.follower === currentUser
         );
 
         if (follower || following) {
@@ -268,7 +268,7 @@ exports.saveBookmark = async (req, res) => {
   }
 };
 
-//Returns to us the users whom they current user is not following yet...
+//Returns to us the users whom they current user is not following yet... This will be deprecated
 exports.suggestedFollowers = async (req, res) => {
   try {
     const emailAddress = req.query.userEmail;
@@ -286,11 +286,11 @@ exports.suggestedFollowers = async (req, res) => {
 
     for (const item of data) {
       const isFollowing = item.following.some(
-        (el) => el.followerName === emailAddress
+        (el) => el.follower === emailAddress
       );
 
       const isFollower = item.followers.some(
-        (el) => el.followerName === emailAddress
+        (el) => el.follower === emailAddress
       );
 
       if (!isFollower && !isFollowing) {
