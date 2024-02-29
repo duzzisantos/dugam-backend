@@ -39,12 +39,14 @@ const UserAccount = new Schema(
     ],
     followers: [
       {
+        follower: String,
         followerName: String,
         isFollower: Boolean,
       },
     ],
     following: [
       {
+        follower: String,
         followerName: String,
         isFollowing: Boolean,
         reportHistory: [{ report: String, recommendation: String }],

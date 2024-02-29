@@ -7,18 +7,29 @@ exports.followAnotherUser = async (req, res) => {
   try {
     if (!req.query.secondParty || !req.query.currentUser) {
       return res.status(400).json({
-        message:
-          "Request cannot be empty. Current User and Second Party missing",
+        message: "Request parameters cannot be empty.",
       });
     }
 
     const { secondParty, currentUser } = req.query;
 
+    const currentName = (await User.find({ userEmail: currentUser }))
+      .map((element) => element.userName)
+      .join("");
+
+    const secondPartyName = (await User.find({ userEmail: secondParty }))
+      .map((element) => element.userName)
+      .join("");
+
     await User.updateOne(
       { userEmail: secondParty },
       {
         $push: {
-          followers: { followerName: currentUser, isFollower: true },
+          followers: {
+            follower: currentUser,
+            followerName: currentName,
+            isFollower: true,
+          },
         },
       },
       { session }
@@ -28,7 +39,11 @@ exports.followAnotherUser = async (req, res) => {
       { userEmail: currentUser },
       {
         $push: {
-          following: { followerName: secondParty, isFollowing: true },
+          following: {
+            follower: secondParty,
+            followerName: secondPartyName,
+            isFollowing: true,
+          },
         },
       },
       { session }
@@ -190,5 +205,45 @@ exports.followingList = async (req, res) => {
           .status(500)
           .json({ message: err.message ?? "Internal Server Error" })
       );
+  }
+};
+
+exports.getSuggestedFollows = async (req, res) => {
+  try {
+    if (!req.query.currentUser) {
+      res.status(400).json({ message: "Request parameters cannot be empty" });
+    }
+
+    const { currentUser } = req.query;
+    const clients = await User.find();
+    if (currentUser) {
+      const suggested = [];
+      clients.forEach((client) => {
+        const [followers, following, clientBusiness] = [
+          client.followers,
+          client.following,
+          client.registeredBusinesses,
+        ];
+
+        const businessWithFewDetails = clientBusiness.map((el) => ({
+          businessName: el.businessName,
+          category: el.category,
+          email: el.email,
+        }));
+
+        if (
+          followers.some((person) => person.follower === currentUser) &&
+          following.some((person) => person.follower === currentUser)
+        ) {
+          return suggested;
+        } else {
+          suggested.push(businessWithFewDetails);
+        }
+      });
+      res.json(suggested.flat());
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };

@@ -7,5 +7,6 @@ module.exports = (app) => {
   router.post("/block", follower.blockAnotherUser);
   router.get("/get-followers", follower.followerList);
   router.get("/get-following", follower.followingList);
+  router.get("/suggested-follows", follower.getSuggestedFollows);
   app.use("/api/followers", router);
 };
