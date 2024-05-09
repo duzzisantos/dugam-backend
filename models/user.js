@@ -7,6 +7,11 @@ const UserAccount = new Schema(
       type: String,
       unique: true,
     },
+    clientUID: {
+      type: String,
+      unique: true,
+      required: true,
+    },
     userEmail: {
       type: String,
       unique: true,
