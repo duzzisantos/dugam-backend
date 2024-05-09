@@ -151,9 +151,9 @@ exports.getAllStates = (req, res) => {
 
 exports.findOne = async (req, res) => {
   try {
-    const emailAddress = req.query.userEmail;
-    if (emailAddress) {
-      const foundUser = await User.findOne({ userEmail: emailAddress });
+    const client = req.query.clientUID;
+    if (client) {
+      const foundUser = await User.findOne({ clientUID: client });
       res.json(foundUser.registeredBusinesses);
     } else {
       res.status(404).json({ message: "User not Found" });

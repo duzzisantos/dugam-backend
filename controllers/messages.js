@@ -5,7 +5,7 @@ exports.createMessage = async (req, res) => {
     throw new Error("Message cannot be empty");
   }
 
-  if (req.body.userEmail) {
+  if (req.body.clientUID) {
     const {
       sender,
       subject,
@@ -17,13 +17,13 @@ exports.createMessage = async (req, res) => {
       replyBody,
     } = req.body;
 
-    const emailAddress = req.body.userEmail;
-    if (emailAddress) {
+    const client = req.body.clientUID;
+    if (client) {
       try {
-        const foundUser = await User.findOne({ userEmail: emailAddress });
+        const foundUser = await User.findOne({ clientUID: client });
         if (foundUser) {
           await User.updateOne(
-            { userEmail: emailAddress },
+            { clientUID: client },
             {
               $push: {
                 directMessages: {
@@ -55,10 +55,10 @@ exports.createMessage = async (req, res) => {
 };
 
 exports.getMessages = (req, res) => {
-  const emailAddress = req.query.userEmail;
+  const client = req.query.clientUID;
 
-  if (emailAddress) {
-    User.find({ userEmail: emailAddress })
+  if (client) {
+    User.find({ clientUID: client })
       .then((data) => {
         const messagesData = data.map((item) => item.directMessages);
         res.json(messagesData);
@@ -74,12 +74,12 @@ exports.getMessages = (req, res) => {
 
 exports.replyMessages = async (req, res) => {
   const { replyDate, replyBody, repliedBy } = req.body;
-  const userEmail = req.query.userEmail;
+  const client = req.query.clientUID;
   const messageId = req.query.id; // Assuming messageId is a route parameter
 
   try {
     const updatedUser = await User.findOneAndUpdate(
-      { userEmail: userEmail, "directMessages._id": messageId },
+      { clientUID: client, "directMessages._id": messageId },
       {
         $push: {
           "directMessages.$.replies": {

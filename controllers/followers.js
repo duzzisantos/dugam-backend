@@ -5,28 +5,28 @@ exports.followAnotherUser = async (req, res) => {
   const session = await User.startSession();
   session.startTransaction();
   try {
-    if (!req.query.secondParty || !req.query.currentUser) {
+    if (!req.query.secondParty || !req.query.clientUID) {
       return res.status(400).json({
         message: "Request parameters cannot be empty.",
       });
     }
 
-    const { secondParty, currentUser } = req.query;
+    const { secondParty, clientUID } = req.query;
 
-    const currentName = (await User.find({ userEmail: currentUser }))
+    const currentName = (await User.find({ clientUID: clientUID }))
       .map((element) => element.userName)
       .join("");
 
-    const secondPartyName = (await User.find({ userEmail: secondParty }))
+    const secondPartyName = (await User.find({ clientUID: secondParty }))
       .map((element) => element.userName)
       .join("");
 
     await User.updateOne(
-      { userEmail: secondParty },
+      { clientUID: secondParty },
       {
         $push: {
           followers: {
-            follower: currentUser,
+            follower: clientUID,
             followerName: currentName,
             isFollower: true,
           },
@@ -36,7 +36,7 @@ exports.followAnotherUser = async (req, res) => {
     );
 
     await User.updateOne(
-      { userEmail: currentUser },
+      { clientUID: clientUID },
       {
         $push: {
           following: {
@@ -69,16 +69,16 @@ exports.blockAnotherUser = async (req, res) => {
   session.startTransaction();
 
   try {
-    if (!req.query.currentUser || !req.query.secondParty) {
+    if (!req.query.clientUID || !req.query.secondParty) {
       req.status(400).json({
         message: "Bad Request. Query requires current user and second party.",
       });
     }
 
-    const { currentUser, secondParty } = req.query;
+    const { clientUID, secondParty } = req.query;
 
     await User.updateOne(
-      { userEmail: currentUser },
+      { clientUID: clientUID },
       {
         $pull: {
           following: { followerName: secondParty },
@@ -88,10 +88,10 @@ exports.blockAnotherUser = async (req, res) => {
     );
 
     await User.updateOne(
-      { userEmail: secondParty },
+      { clientUID: secondParty },
       {
         $pull: {
-          followers: { followerName: currentUser },
+          followers: { followerName: clientUID },
         },
       },
       { session }
@@ -111,17 +111,17 @@ exports.blockAnotherUser = async (req, res) => {
 //Unfollow one user who  is
 exports.unfollowOneUser = async (req, res) => {
   try {
-    if (!req.query.secondParty || !req.query.currentUser) {
+    if (!req.query.secondParty || !req.query.clientUID) {
       return res.status(400).json({
         message:
           "Request cannot be empty. Current User and Second Party missing",
       });
     }
 
-    const { secondParty, currentUser } = req.query;
+    const { secondParty, clientUID } = req.query;
 
     await User.updateOne(
-      { userEmail: currentUser },
+      { clientUID: clientUID },
       {
         $pull: {
           following: { followerName: secondParty, isFollowing: false },
@@ -146,12 +146,12 @@ exports.updateFollowingList = async (req, res) => {
       });
     }
 
-    if (req.body.userEmail) {
-      const followedUser = req.body.userEmail;
-      const { followerName } = req.body;
+    if (req.body.clientUID) {
+      const followedUser = req.body.clientUID;
+      const { clientUID } = req.body;
       // Find the current user and user who is currently followed
-      const followed = await User.findOne({ userEmail: followedUser });
-      const currentUser = await User.findOne({ userEmail: followerName });
+      const followed = await User.findOne({ clientUID: followedUser });
+      const currentUser = await User.findOne({ clientUID });
 
       if (!followed) {
         return res.status(404).json({ message: "User not found." });
@@ -159,7 +159,7 @@ exports.updateFollowingList = async (req, res) => {
 
       // Update the current user's following array
       currentUser.following.push({
-        followerName: followed.userEmail,
+        followerName: followed.clientUID,
         followDate: followed.followDate,
       });
 
@@ -177,9 +177,9 @@ exports.updateFollowingList = async (req, res) => {
 };
 
 exports.followerList = async (req, res) => {
-  const emailAddress = req.query.userEmail;
-  if (emailAddress) {
-    await User.find({ userEmail: emailAddress })
+  const client = req.query.clientUID;
+  if (client) {
+    await User.find({ clientUID: client })
       .then((data) => {
         const followers = data.map((element) => element.followers);
         res.json(followers);
@@ -193,9 +193,9 @@ exports.followerList = async (req, res) => {
 };
 
 exports.followingList = async (req, res) => {
-  const emailAddress = req.query.userEmail;
-  if (emailAddress) {
-    await User.find({ userEmail: emailAddress })
+  const client = req.query.clientUID;
+  if (client) {
+    await User.find({ clientUID: client })
       .then((data) => {
         const following = data.map((element) => element.following);
         res.json(following);
@@ -210,13 +210,13 @@ exports.followingList = async (req, res) => {
 
 exports.getSuggestedFollows = async (req, res) => {
   try {
-    if (!req.query.currentUser) {
+    if (!req.query.clientUID) {
       res.status(400).json({ message: "Request parameters cannot be empty" });
     }
 
-    const { currentUser } = req.query;
+    const { clientUID } = req.query;
     const clients = await User.find();
-    if (currentUser) {
+    if (clientUID) {
       const suggested = [];
       clients.forEach((client) => {
         const [followers, following, clientBusiness] = [
@@ -229,14 +229,12 @@ exports.getSuggestedFollows = async (req, res) => {
           //this is the whole point. We do not want to render unnecessary data
           businessName: el.businessName,
           category: el.category,
-          email: el.email,
+          clientUID: client.clientUID,
         }));
 
-        if (followers.some((person) => person.follower === currentUser)) {
+        if (followers.some((person) => person.follower === clientUID)) {
           return [];
-        } else if (
-          following.some((person) => person.follower === currentUser)
-        ) {
+        } else if (following.some((person) => person.follower === clientUID)) {
           return [];
         } else {
           suggested.push(businessWithFewDetails);

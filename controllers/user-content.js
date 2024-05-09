@@ -20,14 +20,14 @@ exports.createUserContent = async (req, res) => {
       authorName,
     } = req.body;
 
-    const emailAddress = req.body.userEmail;
+    const client = req.body.userEmail;
 
     try {
-      const selectedUser = await User.findOne({ userEmail: emailAddress });
+      const selectedUser = await User.findOne({ userEmail: client });
       if (selectedUser) {
         //Update user's followers list
         await User.updateOne(
-          { userEmail: emailAddress },
+          { userEmail: client },
           {
             $push: {
               userContent: {
@@ -59,15 +59,15 @@ exports.createUserContent = async (req, res) => {
 
 //Fetch all posts for current user
 exports.getAllUserPosts = (req, res) => {
-  const emailAddress = req.query.userEmail;
-  if (emailAddress) {
+  const currentUser = req.query.clientUID;
+  if (currentUser) {
     const id = req.query.id;
     var regex = id ? { $regex: new RegExp(id), $options: "i" } : {};
 
     User.find(regex)
       .then((data) => {
         const userContent = data
-          .filter((item) => emailAddress.match(new RegExp(item.userEmail), "i"))
+          .filter((item) => currentUser.match(new RegExp(item.clientUID), "i"))
           .map((element) => element.userContent);
 
         res.json(userContent);
@@ -84,7 +84,7 @@ exports.getAllUserPosts = (req, res) => {
 //If that is so - then that means one or both parties are following the other - therefore subscribe to their content.
 exports.fetchAllPostsFromFollowedAccounts = async (req, res) => {
   try {
-    const currentUser = req.query.userEmail;
+    const currentUser = req.query.clientUID;
     const getUsers = await User.find();
 
     if (currentUser) {
@@ -112,14 +112,14 @@ exports.fetchAllPostsFromFollowedAccounts = async (req, res) => {
 
 //Controller for replying timeline posts of followers and of those users whom the current user is following.
 exports.replyUserPost = async (req, res) => {
-  const emailAddress = req.query.userEmail;
+  const client = req.query.clientUID;
   const postId = req.query.id;
 
   const { commentDate, commentBody, commentBy } = req.body;
 
   try {
     const userToReply = await User.findOneAndUpdate(
-      { userEmail: emailAddress, "userContent._id": postId },
+      { clientUID: client, "userContent._id": postId },
       {
         $push: {
           "userContent.$.comments": {
@@ -145,13 +145,13 @@ exports.replyUserPost = async (req, res) => {
 };
 
 //Gets comments for a particular post
-exports.getPostComments = (req, res) => {
+exports.getPostComments = async (req, res) => {
   const postId = req.query.id;
-  const emailAddress = req.query.userEmail;
+  const client = req.query.clientUID;
 
-  User.findOne({ userEmail: emailAddress })
+  await User.findOne({ clientUID: client })
     .then((data) => {
-      const specificUserContentComments = data.userContent.find(
+      const specificUserContentComments = data?.userContent.find(
         (element) => element._id.toString() === postId
       );
 
@@ -170,14 +170,14 @@ exports.getPostComments = (req, res) => {
 
 //Like comments for a particular post
 exports.sendLikePost = async (req, res) => {
-  const emailAddress = req.query.userEmail;
+  const client = req.query.clientUID;
   const postId = req.query.id;
 
   const { likedUserName, dateLiked } = req.body;
 
   try {
     const userToReply = await User.findOneAndUpdate(
-      { userEmail: emailAddress, "userContent._id": postId },
+      { clientUID: client, "userContent._id": postId },
       {
         $push: {
           "userContent.$.likes": {
@@ -205,14 +205,14 @@ exports.sendLikePost = async (req, res) => {
 
 //Prevents double likes from same current user, by updating the likes object's isLiked property to false and isUnliked to true
 exports.unlikePost = async (req, res) => {
-  const emailAddress = req.query.userEmail;
+  const client = req.query.clientUID;
   const postId = req.query.id;
 
   const { likedUserName, dateLiked } = req.body;
 
   try {
     const userToReply = await User.findOneAndUpdate(
-      { userEmail: emailAddress, "userContent._id": postId },
+      { clientUID: client, "userContent._id": postId },
       {
         $set: {
           "userContent.$.likes": {
@@ -240,14 +240,14 @@ exports.unlikePost = async (req, res) => {
 
 //Set Bookmarks for a particular post
 exports.saveBookmark = async (req, res) => {
-  const emailAddress = req.query.userEmail;
+  const client = req.query.clientUID;
   const postId = req.query.id;
 
   const { isBookmarked } = req.body;
 
   try {
     const userToReply = await User.findOneAndUpdate(
-      { userEmail: emailAddress, "userContent._id": postId },
+      { clientUID: client, "userContent._id": postId },
       {
         $set: {
           isBookmarked: isBookmarked,
@@ -271,9 +271,9 @@ exports.saveBookmark = async (req, res) => {
 //Returns to us the users whom they current user is not following yet... This will be deprecated
 exports.suggestedFollowers = async (req, res) => {
   try {
-    const emailAddress = req.query.userEmail;
+    const client = req.query.clientUID;
 
-    if (!emailAddress) {
+    if (!client) {
       return res.status(500).json({ message: "Internal Server Error" });
     }
 
@@ -285,13 +285,9 @@ exports.suggestedFollowers = async (req, res) => {
     const output = [];
 
     for (const item of data) {
-      const isFollowing = item.following.some(
-        (el) => el.follower === emailAddress
-      );
+      const isFollowing = item.following.some((el) => el.follower === client);
 
-      const isFollower = item.followers.some(
-        (el) => el.follower === emailAddress
-      );
+      const isFollower = item.followers.some((el) => el.follower === client);
 
       if (!isFollower && !isFollowing) {
         output.push(item.registeredBusinesses); // Push the user object instead of registered businesses

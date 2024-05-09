@@ -12,25 +12,25 @@ exports.createRating = async (req, res) => {
     return;
   }
 
-  if (req.body.userEmail) {
+  if (req.body.clientUID) {
     const {
       ratingsContent,
       ratedBy,
       ratingsDate,
       ratingStars,
       ratingsTitle,
-      ratedUser,
+      ratingsOwner,
     } = req.body;
 
-    const emailAddress = req.body.userEmail;
+    const client = req.body.clientUID;
 
     try {
-      const ratingsOwner = await UserAccount.findOne({
-        userEmail: emailAddress,
+      const rated = await UserAccount.findOne({
+        clientUID: client,
       });
-      if (ratingsOwner && typeof ratingsOwner === "object") {
+      if (rated && typeof rated === "object") {
         await UserAccount.updateOne(
-          { userEmail: emailAddress },
+          { clientUID: client },
           {
             $push: {
               ratings: {
@@ -39,7 +39,7 @@ exports.createRating = async (req, res) => {
                 ratedBy,
                 ratingsDate,
                 ratingStars,
-                ratedUser,
+                ratingsOwner,
               },
             },
           }
@@ -65,20 +65,55 @@ exports.createRating = async (req, res) => {
  *
  * @param {object} req
  * @param {object} res
- * returns an array of objects of all ratings pertaining to the customer whose email address is determined
+ * returns an array of objects of all ratings made by current user
  */
 exports.getAllRatings = async (req, res) => {
-  const emailAddress = req.query.userEmail;
-  if (emailAddress) {
-    await UserAccount.find({ userEmail: emailAddress })
-      .then((data) => {
-        const foundData = data.map((element) => element.ratings);
+  const id = req.query.id;
+  var condition = id ? { $regex: new RegExp(id), $options: "i" } : {};
+  await UserAccount.find(condition)
+    .then((data) => {
+      if (!data) {
+        res.json(404).json({ message: "Not found" });
+      } else {
+        const found = data.map((el) => el.ratings);
+        res.json(found);
+      }
+    })
+    .catch((err) => {
+      res
+        .status(500)
+        .json({ message: err.message || "Error in retrieving all vendors" });
+    });
+};
 
-        res.json(foundData.flat());
+//Ratings made about current user's business
+exports.getReceivedRatings = async (req, res) => {
+  const client = req.query.userEmail;
+
+  if (client) {
+    await UserAccount.find()
+      .then((item) => {
+        const result = [];
+        item.forEach((vendor) => {
+          const ratings = vendor.ratings;
+
+          return ratings.forEach((rating) => {
+            client === rating.ratingsOwner
+              ? result.push({
+                  ratingsOwner: rating.ratingsOwner,
+                  ratingsDate: rating.ratingsDate,
+                  ratingStars: rating.ratingStars,
+                  ratedBy: rating.ratedBy,
+                  ratingsContent: rating.ratingsContent,
+                  ratingsTitle: rating.ratingsTitle,
+                })
+              : [];
+          });
+        });
+        res.json(result.flat());
       })
       .catch((err) => {
-        console.warn(err);
-        res.status(404).json({ message: "Ratings data not found" });
+        console.error(err);
       });
   }
 };
@@ -90,12 +125,12 @@ exports.getAllRatings = async (req, res) => {
  * returns a modified customer ratings based on its object id and only ratings content pertaining to email-identified customer
  */
 exports.updateOneRating = async (req, res) => {
-  const emailAddress = req.body.emailAddress;
+  const client = req.body.clientUID;
   const { ratingsContent, ratingsDate, ratedBy, ratingStars, ratingsTitle } =
     req.body;
 
   try {
-    const foundUser = await UserAccount.findOne({ userEmail: emailAddress });
+    const foundUser = await UserAccount.findOne({ clientUID: client });
     const id = req.params.id;
     if (foundUser) {
       await UserAccount.findByIdAndUpdate(
@@ -128,10 +163,10 @@ exports.updateOneRating = async (req, res) => {
 };
 
 exports.deleteOneRating = async (req, res) => {
-  const emailAddress = req.body.userEmail;
+  const client = req.body.clientUID;
 
   try {
-    const foundUser = await UserAccount.findOne({ userEmail: emailAddress });
+    const foundUser = await UserAccount.findOne({ clientUID: client });
     if (foundUser) {
       const id = foundUser.ratings.id.toString();
       await UserAccount.findByIdAndDelete(id);

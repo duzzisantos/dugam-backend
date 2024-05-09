@@ -10,7 +10,6 @@ const UserAccount = new Schema(
     clientUID: {
       type: String,
       unique: true,
-      required: true,
     },
     userEmail: {
       type: String,
@@ -60,12 +59,14 @@ const UserAccount = new Schema(
     userContent: [
       {
         authorEmail: String,
+        authorClientUID: String,
         authorName: String,
         contentBody: String,
         contentImage: String,
         likes: [
           {
             likedUserName: String,
+            likedUID: String,
             isUnliked: Boolean,
             isLiked: Boolean,
             dateLiked: String,
