@@ -29,7 +29,11 @@ db.mongoose
   });
 
 var corsOptions = {
-  origin: process.env.REACT_APP_CLIENT_HOSTNAME,
+  origin:
+    process.env.NODE_ENV === "development"
+      ? "http://localhost:3000"
+      : process.env.NODE_ENV === "production" &&
+        process.env.REACT_APP_CLIENT_HOSTNAME,
 
   methods: "GET POST PUT DELETE",
 };
@@ -103,22 +107,22 @@ app.use("/", (err, req, res, next) => {
 });
 
 //MiddleWare for checking authorized users
-// app.use((req, res, next) => {
-//   const token =
-//     req.headers.authorization && req.headers.authorization.split(" ")[1];
-//   if (!token) {
-//     return res.status(401).json({ message: "Unauthorized Access" });
-//   }
+app.use((req, res, next) => {
+  const token =
+    req.headers.authorization && req.headers.authorization.split(" ")[1];
+  if (!token) {
+    return res.status(401).json({ message: "Unauthorized Access" });
+  }
 
-//   const decodedToken = jwtDecode(token);
+  const decodedToken = jwtDecode(token);
 
-//   if (decodedToken.aud === process.env.REACT_APP_AUTHORIZATION_AUD) {
-//     req.decodedToken = decodedToken;
-//     next();
-//   } else {
-//     res.status(401).json({ message: "Unauthorized Access" });
-//   }
-// });
+  if (decodedToken.aud === process.env.REACT_APP_AUTHORIZATION_AUD) {
+    req.decodedToken = decodedToken;
+    next();
+  } else {
+    res.status(401).json({ message: "Unauthorized Access" });
+  }
+});
 
 const PORT = 8080;
 app.listen(PORT, (err) => {
