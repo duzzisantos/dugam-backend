@@ -9,7 +9,6 @@ const db = require("../models");
 const helmet = require("helmet");
 const methodOverride = require("method-override");
 const mongoSanitize = require("express-mongo-sanitize");
-const { jwtDecode } = require("jwt-decode");
 const { useAuthorization } = require("../utilities/useAuthorization");
 
 //database connection settings

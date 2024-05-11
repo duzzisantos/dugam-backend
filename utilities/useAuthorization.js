@@ -1,3 +1,5 @@
+const { jwtDecode } = require("jwt-decode");
+
 exports.useAuthorization = (req, res, next) => {
   const token =
     req.headers.authorization && req.headers.authorization.split(" ")[1];
