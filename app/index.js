@@ -31,13 +31,11 @@ db.mongoose
 var corsOptions = {
   origin:
     process.env.NODE_ENV === "development"
-      ? "http://localhost:3000/"
-      : process.env.NODE_ENV === "production" && process.env.CLIENT_HOSTNAME,
+      ? "http://localhost:3000"
+      : process.env.NODE_ENV === "production" &&
+        process.env.REACT_APP_CLIENT_HOSTNAME,
 
   methods: "GET POST PUT DELETE",
-  crendentials: true,
-  preflightContinue: false,
-  optionsSuccessStatus: 204,
 };
 
 const rateLimiter = RateLimit({
@@ -45,12 +43,12 @@ const rateLimiter = RateLimit({
   max: 50,
 });
 
-app.use(rateLimiter);
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride());
 app.use(helmet());
+app.use(rateLimiter);
 
 app.use(
   mongoSanitize({
@@ -101,6 +99,13 @@ require("../routes/messages")(app);
 require("../routes/business-query")(app);
 require("../routes/report-logs")(app);
 
+//Error handler
+app.use("/", (err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send("Backend Error!");
+  return next(err);
+});
+
 //MiddleWare for checking authorized users
 app.use((req, res, next) => {
   const token =
@@ -111,7 +116,7 @@ app.use((req, res, next) => {
 
   const decodedToken = jwtDecode(token);
 
-  if (decodedToken.aud === process.env.AUTHORIZATION_AUD) {
+  if (decodedToken.aud === process.env.REACT_APP_AUTHORIZATION_AUD) {
     req.decodedToken = decodedToken;
     next();
   } else {
