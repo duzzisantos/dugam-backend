@@ -3,7 +3,7 @@ process.env.NODE_ENV = "production";
 const express = require("express");
 const app = express();
 
-const RateLimit = require("express-rate-limit");
+// const RateLimit = require("express-rate-limit");
 const cors = require("cors");
 const db = require("../models");
 const helmet = require("helmet");
@@ -24,22 +24,25 @@ db.mongoose
       process.exit();
     }
   });
+
 var corsOptions = {
   origin:
     process.env.NODE_ENV === "development"
       ? "http://localhost:3000/"
-      : process.env.NODE_ENV === "producttion"
-      ? CLIENT_HOSTNAME
-      : "http://localhost:3000/",
+      : process.env.NODE_ENV === "production" && process.env.CLIENT_HOSTNAME,
+
   methods: "GET POST PUT DELETE",
+  crendentials: true,
+  preflightContinue: false,
+  optionsSuccessStatus: 204,
 };
 
-const rateLimiter = RateLimit({
-  windowMs: 1 * 60 * 100,
-  max: 50,
-});
+// const rateLimiter = RateLimit({
+//   windowMs: 1 * 60 * 100,
+//   max: 50,
+// });
 //security parameters
-app.use(rateLimiter);
+// app.use(rateLimiter);
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
