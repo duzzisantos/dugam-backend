@@ -31,7 +31,7 @@ var corsOptions = {
 
 const rateLimiter = RateLimit({
   windowMs: 1 * 60 * 100,
-  max: 20,
+  max: 50,
 });
 //security parameters
 app.use(rateLimiter);
