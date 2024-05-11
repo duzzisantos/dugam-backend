@@ -2,18 +2,22 @@ require("dotenv").config();
 process.env.NODE_ENV = "production";
 const express = require("express");
 const app = express();
-
-// const RateLimit = require("express-rate-limit");
+const { jwtDecode } = require("jwt-decode");
+const RateLimit = require("express-rate-limit");
 const cors = require("cors");
 const db = require("../models");
 const helmet = require("helmet");
 const methodOverride = require("method-override");
 const mongoSanitize = require("express-mongo-sanitize");
-const { useAuthorization } = require("../utilities/useAuthorization");
+
+//MongoDB connection parameters
+const connectionParameters = {
+  ssl: true,
+};
 
 //database connection settings
 db.mongoose
-  .connect(db.url ?? process.env.MONGO_URI)
+  .connect(db.url ?? process.env.MONGO_URI, connectionParameters)
   .then(() => {
     console.log("Connection established with database");
   })
@@ -36,12 +40,12 @@ var corsOptions = {
   optionsSuccessStatus: 204,
 };
 
-// const rateLimiter = RateLimit({
-//   windowMs: 1 * 60 * 100,
-//   max: 50,
-// });
-//security parameters
-// app.use(rateLimiter);
+const rateLimiter = RateLimit({
+  windowMs: 1 * 60 * 100,
+  max: 50,
+});
+
+app.use(rateLimiter);
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -99,7 +103,20 @@ require("../routes/report-logs")(app);
 
 //MiddleWare for checking authorized users
 app.use((req, res, next) => {
-  useAuthorization(req, res, next);
+  const token =
+    req.headers.authorization && req.headers.authorization.split(" ")[1];
+  if (!token) {
+    return res.status(401).json({ message: "Unauthorized Access" });
+  }
+
+  const decodedToken = jwtDecode(token);
+
+  if (decodedToken.aud === process.env.AUTHORIZATION_AUD) {
+    req.decodedToken = decodedToken;
+    next();
+  } else {
+    res.status(401).json({ message: "Unauthorized Access" });
+  }
 });
 
 const PORT = 8080;
