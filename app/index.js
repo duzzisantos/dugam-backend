@@ -1,17 +1,16 @@
 require("dotenv").config();
+process.env.NODE_ENV = "production";
 const express = require("express");
 const app = express();
 
 const RateLimit = require("express-rate-limit");
 const cors = require("cors");
-const db = require("./models");
+const db = require("../models");
 const helmet = require("helmet");
 const methodOverride = require("method-override");
 const mongoSanitize = require("express-mongo-sanitize");
 const { jwtDecode } = require("jwt-decode");
-const { useAuthorization } = require("./utilities/useAuthorization");
-
-(fs = require("fs")), (multer = require("multer"));
+const { useAuthorization } = require("../utilities/useAuthorization");
 
 //database connection settings
 db.mongoose
@@ -26,7 +25,8 @@ db.mongoose
     }
   });
 var corsOptions = {
-  origin: "http://localhost:3000/",
+  origin: "http://localhost:3000/" ?? process.env.CLIENT_HOSTNAME,
+  methods: "GET POST PUT DELETE",
 };
 
 const rateLimiter = RateLimit({
@@ -80,51 +80,15 @@ app.use(
 app.use(helmet.noSniff()); //mitigates data sniffing by hackers
 app.use(helmet.xssFilter()); //prevents cross-site scripting
 
-//Multer Image storage
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/");
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, file.fieldname + "-" + uniqueSuffix);
-  },
-});
-
-const upload = multer({ storage: storage });
-
-app.post("/register/photos", upload.single("photos"), (req, res, next) => {
-  let photos = fs.readFileSync(req.files.path);
-  let encode_photo = photos.toString("base64");
-  res.send(req.files);
-  let final_img = {
-    contentType: req.file.mimetype,
-    image: Buffer.from(encode_photo, "base64"),
-  };
-  db.create(final_img, (err, res) => {
-    if (err) {
-      console.log(err);
-    } else {
-      console.log(res.photos.Buffer);
-      console.log(req.files);
-      console.log("Photos saved to database");
-      res.contentType(final_img.contentType);
-      res.send(final_img.image);
-    }
-  });
-});
-
-//Multer ends here
-
 //REST API routes
-require("./routes/register")(app);
-require("./routes/signup")(app);
-require("./routes/followers")(app);
-require("./routes/user-content")(app);
-require("./routes/ratings")(app);
-require("./routes/messages")(app);
-require("./routes/business-query")(app);
-require("./routes/report-logs")(app);
+require("../routes/register")(app);
+require("../routes/signup")(app);
+require("../routes/followers")(app);
+require("../routes/user-content")(app);
+require("../routes/ratings")(app);
+require("../routes/messages")(app);
+require("../routes/business-query")(app);
+require("../routes/report-logs")(app);
 
 //MiddleWare for checking authorized users
 app.use((req, res, next) => {
