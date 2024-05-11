@@ -25,7 +25,12 @@ db.mongoose
     }
   });
 var corsOptions = {
-  origin: "http://localhost:3000/" ?? process.env.CLIENT_HOSTNAME,
+  origin:
+    process.env.NODE_ENV === "development"
+      ? "http://localhost:3000/"
+      : process.env.NODE_ENV === "producttion"
+      ? CLIENT_HOSTNAME
+      : "http://localhost:3000/",
   methods: "GET POST PUT DELETE",
 };
 
