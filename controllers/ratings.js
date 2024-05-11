@@ -12,7 +12,7 @@ exports.createRating = async (req, res) => {
     return;
   }
 
-  if (req.body.clientUID) {
+  if (req.body.ratingsOwner) {
     const {
       ratingsContent,
       ratedBy,
@@ -22,15 +22,15 @@ exports.createRating = async (req, res) => {
       ratingsOwner,
     } = req.body;
 
-    const client = req.body.clientUID;
+    const personToRate = req.body.ratingsOwner;
 
     try {
       const rated = await UserAccount.findOne({
-        clientUID: client,
+        userEmail: personToRate,
       });
       if (rated && typeof rated === "object") {
         await UserAccount.updateOne(
-          { clientUID: client },
+          { userEmail: personToRate },
           {
             $push: {
               ratings: {

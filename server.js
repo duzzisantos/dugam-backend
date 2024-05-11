@@ -2,11 +2,14 @@ require("dotenv").config();
 const express = require("express");
 const app = express();
 
+const RateLimit = require("express-rate-limit");
 const cors = require("cors");
 const db = require("./models");
 const helmet = require("helmet");
 const methodOverride = require("method-override");
 const mongoSanitize = require("express-mongo-sanitize");
+const { jwtDecode } = require("jwt-decode");
+const { useAuthorization } = require("./utilities/useAuthorization");
 
 (fs = require("fs")), (multer = require("multer"));
 
@@ -26,12 +29,18 @@ var corsOptions = {
   origin: "http://localhost:3000/",
 };
 
+const rateLimiter = RateLimit({
+  windowMs: 1 * 60 * 100,
+  max: 20,
+});
 //security parameters
+app.use(rateLimiter);
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride());
 app.use(helmet());
+
 app.use(
   mongoSanitize({
     replaceWith: "_",
@@ -116,6 +125,11 @@ require("./routes/ratings")(app);
 require("./routes/messages")(app);
 require("./routes/business-query")(app);
 require("./routes/report-logs")(app);
+
+//MiddleWare for checking authorized users
+app.use((req, res, next) => {
+  useAuthorization(req, res, next);
+});
 
 const PORT = 8080;
 app.listen(PORT, (err) => {

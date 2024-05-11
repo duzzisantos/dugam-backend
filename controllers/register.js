@@ -167,9 +167,10 @@ exports.findOne = async (req, res) => {
 exports.update = async (req, res) => {
   if (req.body) {
     try {
-      const emailAddress = req.query.userEmail;
-      if (emailAddress) {
-        const foundUser = await User.findOne({ userEmail: emailAddress });
+      const client = req.query.clientUID;
+
+      if (client) {
+        const foundUser = await User.findOne({ clientUID: client });
 
         if (foundUser) {
           const registeredBusinesses = foundUser.registeredBusinesses;

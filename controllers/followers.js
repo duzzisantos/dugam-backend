@@ -5,13 +5,18 @@ exports.followAnotherUser = async (req, res) => {
   const session = await User.startSession();
   session.startTransaction();
   try {
-    if (!req.query.secondParty || !req.query.clientUID) {
+    if (
+      !req.body.secondParty ||
+      !req.body.clientUID ||
+      !req.body.userEmail ||
+      !req.body.secondPartyEmail
+    ) {
       return res.status(400).json({
         message: "Request parameters cannot be empty.",
       });
     }
 
-    const { secondParty, clientUID } = req.query;
+    const { secondParty, clientUID, userEmail, secondPartyEmail } = req.body;
 
     const currentName = (await User.find({ clientUID: clientUID }))
       .map((element) => element.userName)
@@ -26,7 +31,7 @@ exports.followAnotherUser = async (req, res) => {
       {
         $push: {
           followers: {
-            follower: clientUID,
+            follower: userEmail,
             followerName: currentName,
             isFollower: true,
           },
@@ -40,7 +45,7 @@ exports.followAnotherUser = async (req, res) => {
       {
         $push: {
           following: {
-            follower: secondParty,
+            follower: secondPartyEmail,
             followerName: secondPartyName,
             isFollowing: true,
           },
@@ -69,16 +74,16 @@ exports.blockAnotherUser = async (req, res) => {
   session.startTransaction();
 
   try {
-    if (!req.query.clientUID || !req.query.secondParty) {
+    if (!req.body.userEmail || !req.body.secondParty) {
       req.status(400).json({
         message: "Bad Request. Query requires current user and second party.",
       });
     }
 
-    const { clientUID, secondParty } = req.query;
+    const { userEmail, secondParty } = req.body;
 
     await User.updateOne(
-      { clientUID: clientUID },
+      { userEmail: userEmail },
       {
         $pull: {
           following: { followerName: secondParty },
@@ -88,10 +93,10 @@ exports.blockAnotherUser = async (req, res) => {
     );
 
     await User.updateOne(
-      { clientUID: secondParty },
+      { userEmail: secondParty },
       {
         $pull: {
-          followers: { followerName: clientUID },
+          followers: { followerName: userEmail },
         },
       },
       { session }
@@ -110,27 +115,60 @@ exports.blockAnotherUser = async (req, res) => {
 
 //Unfollow one user who  is
 exports.unfollowOneUser = async (req, res) => {
+  const session = await User.startSession();
+  session.startTransaction();
   try {
-    if (!req.query.secondParty || !req.query.clientUID) {
+    if (!req.body.secondParty || !req.body.userEmail) {
       return res.status(400).json({
-        message:
-          "Request cannot be empty. Current User and Second Party missing",
+        message: "Request parameters cannot be empty.",
       });
     }
 
-    const { secondParty, clientUID } = req.query;
+    const { secondParty, userEmail } = req.body;
+
+    const currentName = (await User.find({ userEmail: userEmail }))
+      .map((element) => element.userName)
+      .join("");
+
+    const secondPartyName = (await User.find({ userEmail: secondParty }))
+      .map((element) => element.userName)
+      .join("");
 
     await User.updateOne(
-      { clientUID: clientUID },
+      { userEmail: secondParty },
       {
         $pull: {
-          following: { followerName: secondParty, isFollowing: false },
+          followers: {
+            follower: userEmail,
+            followerName: currentName,
+            isFollower: true,
+          },
         },
-      }
+      },
+      { session }
     );
 
-    res.status(200).json({ message: "Unfollowed successfully" });
+    await User.updateOne(
+      { userEmail: userEmail },
+      {
+        $pull: {
+          following: {
+            follower: secondParty,
+            followerName: secondPartyName,
+            isFollowing: true,
+          },
+        },
+      },
+      { session }
+    );
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(200).json({ message: "Unfollowed user successfully" });
   } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
     console.error(err);
     res.status(500).json({ message: "Internal Server Error" });
   }
@@ -230,6 +268,7 @@ exports.getSuggestedFollows = async (req, res) => {
           businessName: el.businessName,
           category: el.category,
           clientUID: client.clientUID,
+          userEmail: client.userEmail,
         }));
 
         if (followers.some((person) => person.follower === clientUID)) {

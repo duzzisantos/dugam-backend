@@ -59,7 +59,7 @@ exports.createUserContent = async (req, res) => {
 
 //Fetch all posts for current user
 exports.getAllUserPosts = (req, res) => {
-  const currentUser = req.query.clientUID;
+  const currentUser = req?.query?.userEmail;
   if (currentUser) {
     const id = req.query.id;
     var regex = id ? { $regex: new RegExp(id), $options: "i" } : {};
@@ -67,7 +67,7 @@ exports.getAllUserPosts = (req, res) => {
     User.find(regex)
       .then((data) => {
         const userContent = data
-          .filter((item) => currentUser.match(new RegExp(item.clientUID), "i"))
+          .filter((item) => currentUser.match(new RegExp(item.userEmail), "i"))
           .map((element) => element.userContent);
 
         res.json(userContent);
@@ -84,7 +84,7 @@ exports.getAllUserPosts = (req, res) => {
 //If that is so - then that means one or both parties are following the other - therefore subscribe to their content.
 exports.fetchAllPostsFromFollowedAccounts = async (req, res) => {
   try {
-    const currentUser = req.query.clientUID;
+    const currentUser = req?.query?.userEmail;
     const getUsers = await User.find();
 
     if (currentUser) {
@@ -112,14 +112,14 @@ exports.fetchAllPostsFromFollowedAccounts = async (req, res) => {
 
 //Controller for replying timeline posts of followers and of those users whom the current user is following.
 exports.replyUserPost = async (req, res) => {
-  const client = req.query.clientUID;
+  const client = req.query.userEmail;
   const postId = req.query.id;
 
   const { commentDate, commentBody, commentBy } = req.body;
 
   try {
     const userToReply = await User.findOneAndUpdate(
-      { clientUID: client, "userContent._id": postId },
+      { userEmail: client, "userContent._id": postId },
       {
         $push: {
           "userContent.$.comments": {
@@ -147,9 +147,9 @@ exports.replyUserPost = async (req, res) => {
 //Gets comments for a particular post
 exports.getPostComments = async (req, res) => {
   const postId = req.query.id;
-  const client = req.query.clientUID;
+  const client = req.query.userEmail;
 
-  await User.findOne({ clientUID: client })
+  await User.findOne({ userEmail: client })
     .then((data) => {
       const specificUserContentComments = data?.userContent.find(
         (element) => element._id.toString() === postId
@@ -170,14 +170,14 @@ exports.getPostComments = async (req, res) => {
 
 //Like comments for a particular post
 exports.sendLikePost = async (req, res) => {
-  const client = req.query.clientUID;
+  const client = req.query.userEmail;
   const postId = req.query.id;
 
   const { likedUserName, dateLiked } = req.body;
 
   try {
     const userToReply = await User.findOneAndUpdate(
-      { clientUID: client, "userContent._id": postId },
+      { userEmail: client, "userContent._id": postId },
       {
         $push: {
           "userContent.$.likes": {
@@ -205,14 +205,14 @@ exports.sendLikePost = async (req, res) => {
 
 //Prevents double likes from same current user, by updating the likes object's isLiked property to false and isUnliked to true
 exports.unlikePost = async (req, res) => {
-  const client = req.query.clientUID;
+  const client = req.query.userEmail;
   const postId = req.query.id;
 
   const { likedUserName, dateLiked } = req.body;
 
   try {
     const userToReply = await User.findOneAndUpdate(
-      { clientUID: client, "userContent._id": postId },
+      { userEmail: client, "userContent._id": postId },
       {
         $set: {
           "userContent.$.likes": {
@@ -240,14 +240,14 @@ exports.unlikePost = async (req, res) => {
 
 //Set Bookmarks for a particular post
 exports.saveBookmark = async (req, res) => {
-  const client = req.query.clientUID;
+  const client = req.query.userEmail;
   const postId = req.query.id;
 
   const { isBookmarked } = req.body;
 
   try {
     const userToReply = await User.findOneAndUpdate(
-      { clientUID: client, "userContent._id": postId },
+      { userEmail: client, "userContent._id": postId },
       {
         $set: {
           isBookmarked: isBookmarked,

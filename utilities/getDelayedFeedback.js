@@ -8,7 +8,7 @@ exports.getDelayedFeedback = (report, User) => {
     });
     if (userToReceiveCorrespondence) {
       await User.updateOne(
-        { userEmail: report.reportedBy },
+        { clientUID: report.reportedBy },
         {
           $push: {
             directMessages: {
