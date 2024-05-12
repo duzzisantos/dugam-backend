@@ -10,14 +10,9 @@ const helmet = require("helmet");
 const methodOverride = require("method-override");
 const mongoSanitize = require("express-mongo-sanitize");
 
-//MongoDB connection parameters
-const connectionParameters = {
-  ssl: true,
-};
-
 //database connection settings
 db.mongoose
-  .connect(db.url ?? process.env.MONGO_URI, connectionParameters)
+  .connect(db.url ?? process.env.MONGO_URI)
   .then(() => {
     console.log("Connection established with database");
   })
@@ -28,8 +23,13 @@ db.mongoose
     }
   });
 
+const isLocal = process.env.NODE_ENV === "development";
+const isProduction = process.env.NODE_ENV === "production";
+
 var corsOptions = {
-  origin: process.env.REACT_APP_CLIENT_HOSTNAME ?? "http://localhost:3000",
+  origin: isProduction
+    ? process.env.REACT_APP_CLIENT_HOSTNAME
+    : isLocal && "http://localhost:3000",
   methods: "GET POST PUT DELETE",
 };
 
@@ -56,7 +56,7 @@ app.use(
     useDefaults: false,
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "http://localhost:3000/"], //only scripts from this host
+      scriptSrc: ["'self'", "http://localhost:3000"], //only scripts from this host
       styleSrc: ["'self'"],
       imgSrc: ["'self'"],
       upgradeInsecureRequests: [],
