@@ -26,14 +26,14 @@ db.mongoose
 const isLocal = process.env.NODE_ENV === "development";
 const isProduction = process.env.NODE_ENV === "production";
 
-const corsOptions = {
-  origin: isProduction
-    ? process.env.REACT_APP_CLIENT_HOSTNAME
-    : isLocal && "http://localhost:3000/",
-  methods: "GET POST PUT DELETE",
-};
+// const corsOptions = {
+//   origin: isProduction
+//     ? process.env.REACT_APP_CLIENT_HOSTNAME
+//     : isLocal && "http://localhost:3000/",
+//   methods: "GET POST PUT DELETE",
+// };
 
-app.use(cors(corsOptions));
+// app.use(cors(corsOptions));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
