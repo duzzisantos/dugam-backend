@@ -23,20 +23,15 @@ db.mongoose
     }
   });
 
-const isLocal = process.env.NODE_ENV === "development";
-const isProduction = process.env.NODE_ENV === "production";
+// const isLocal = process.env.NODE_ENV === "development";
+// const isProduction = process.env.NODE_ENV === "production";
 
-const corsOptions = {
-  origin: isProduction
-    ? process.env.REACT_APP_CLIENT_HOSTNAME
-    : isLocal && "http://localhost:3000/",
-  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-  credentials: true,
-  preflightContinue: true,
+var corsOptions = {
+  origin: "http://localhost:3000" ?? process.env.CLIENT_HOSTNAME,
+  methods: "GET, POST, PUT, DELETE",
 };
 
 app.use(cors(corsOptions));
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride());
@@ -44,7 +39,7 @@ app.use(helmet());
 
 const rateLimiter = RateLimit({
   windowMs: 1 * 60 * 100,
-  max: 50,
+  max: 20,
 });
 app.use(rateLimiter);
 
@@ -114,7 +109,7 @@ app.use((req, res, next) => {
 
   const decodedToken = jwtDecode(token);
 
-  if (decodedToken.aud === process.env.REACT_APP_AUTHORIZATION_AUD) {
+  if (decodedToken.aud === process.env.AUTHORIZATION_AUD) {
     req.decodedToken = decodedToken;
     next();
   } else {
