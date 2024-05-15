@@ -26,19 +26,18 @@ db.mongoose
 const isLocal = process.env.NODE_ENV === "development";
 const isProduction = process.env.NODE_ENV === "production";
 
-const corsOptions = {
-  origin: isProduction
-    ? process.env.REACT_APP_CLIENT_HOSTNAME
-    : isLocal && "http://localhost:3000/",
-  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-  credentials: true,
-  preflightContinue: true,
-};
-
-app.use(cors(corsOptions));
+const origin = isProduction
+  ? process.env.REACT_APP_CLIENT_HOSTNAME
+  : isLocal && "http://localhost:3000/";
 
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Origin", origin);
+  res.header("Access-Control-Allow-Credentials", true);
+
+  if (req.method === "OPTIONS") {
+    res.header("Access-Control-Allow-Methods", "PUT, POST, PATCH, DELETE, GET");
+    return res.status(200).json({});
+  }
   next();
 });
 app.use(express.json());
