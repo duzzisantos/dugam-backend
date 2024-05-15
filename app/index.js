@@ -2,9 +2,9 @@ require("dotenv").config();
 process.env.NODE_ENV = "production";
 const express = require("express");
 const app = express();
+const cors = require("cors");
 const { jwtDecode } = require("jwt-decode");
 const RateLimit = require("express-rate-limit");
-const cors = require("cors");
 const db = require("../models");
 const helmet = require("helmet");
 const methodOverride = require("method-override");
@@ -26,8 +26,10 @@ db.mongoose
 const isLocal = process.env.NODE_ENV === "development";
 const isProduction = process.env.NODE_ENV === "production";
 
-var corsOptions = {
-  origin: "*",
+const corsOptions = {
+  origin: isProduction
+    ? process.env.REACT_APP_CLIENT_HOSTNAME
+    : isLocal && "http://localhost:3000",
   methods: "GET POST PUT DELETE",
 };
 
@@ -37,6 +39,18 @@ const rateLimiter = RateLimit({
 });
 
 app.use(cors(corsOptions));
+app.use((req, res, next) => {
+  res.header(
+    "Access-Control-Allow-Headers, *, Access-Control-Allow-Origin",
+    "Origin, X-Requested-with, Content_Type,Accept,Authorization",
+    "http://localhost:3000"
+  );
+  if (req.method === "OPTIONS") {
+    res.header("Access-Control-Allow-Methods", "PUT,POST,PATCH,DELETE,GET");
+    return res.status(200).json({});
+  }
+  next();
+});
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride());
