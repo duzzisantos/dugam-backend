@@ -27,7 +27,7 @@ db.mongoose
 // const isProduction = process.env.NODE_ENV === "production";
 
 const corsOptions = {
-  origin: process.env.REACT_APP_CLIENT_HOSTNAME,
+  origin: "*",
   methods: "GET POST PUT DELETE",
 };
 
