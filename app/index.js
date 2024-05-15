@@ -30,11 +30,17 @@ const corsOptions = {
   origin: isProduction
     ? process.env.REACT_APP_CLIENT_HOSTNAME
     : isLocal && "http://localhost:3000/",
-  methods: "GET POST PUT DELETE",
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  credentials: true,
+  preflightContinue: true,
 };
 
 app.use(cors(corsOptions));
 
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  next();
+});
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride());
