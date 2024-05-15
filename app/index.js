@@ -33,17 +33,17 @@ const corsOptions = {
   methods: "GET POST PUT DELETE",
 };
 
-const rateLimiter = RateLimit({
-  windowMs: 1 * 60 * 100,
-  max: 50,
-});
-
 app.use(cors(corsOptions));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride());
 app.use(helmet());
+
+const rateLimiter = RateLimit({
+  windowMs: 1 * 60 * 100,
+  max: 50,
+});
 app.use(rateLimiter);
 
 app.use(
