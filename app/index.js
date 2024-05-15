@@ -7,12 +7,15 @@ const { jwtDecode } = require("jwt-decode");
 const RateLimit = require("express-rate-limit");
 const db = require("../models");
 const helmet = require("helmet");
-const methodOverride = require("method-override");
+const compression = require("compression");
 const mongoSanitize = require("express-mongo-sanitize");
 
 //database connection settings
 db.mongoose
-  .connect(db.url ?? process.env.MONGO_URI)
+  .connect(db.url ?? process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
   .then(() => {
     console.log("Connection established with database");
   })
@@ -31,16 +34,16 @@ var corsOptions = {
   methods: "GET, POST, PUT, DELETE",
 };
 
-app.use(cors(corsOptions));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(methodOverride());
-app.use(helmet());
-
 const rateLimiter = RateLimit({
   windowMs: 1 * 60 * 100,
   max: 20,
 });
+
+app.use(cors(corsOptions));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(compression);
+app.use(helmet());
 app.use(rateLimiter);
 
 app.use(
