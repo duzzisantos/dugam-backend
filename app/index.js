@@ -31,6 +31,7 @@ const corsOptions = {
     ? process.env.REACT_APP_CLIENT_HOSTNAME
     : isLocal && "http://localhost:3000",
   methods: "GET POST PUT DELETE",
+  withCredentials: false,
 };
 
 const rateLimiter = RateLimit({
