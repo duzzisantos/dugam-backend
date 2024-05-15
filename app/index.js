@@ -23,29 +23,33 @@ db.mongoose
     }
   });
 
-const isLocal = process.env.NODE_ENV === "development";
-const isProduction = process.env.NODE_ENV === "production";
+const allowedOrigins = [
+  process.env.REACT_APP_CLIENT_HOSTNAME,
+  "http://localhost:3000", // for development
+];
 
 const corsOptions = {
-  origin: isProduction
-    ? process.env.REACT_APP_CLIENT_HOSTNAME
-    : isLocal && "http://localhost:3000",
-  methods: "GET POST PUT DELETE",
-  withCredentials: false,
+  origin: function (origin, callback) {
+    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  credentials: true,
+  allowedHeaders: ["Content-Type", "Authorization"],
 };
 
-const rateLimiter = RateLimit({
-  windowMs: 1 * 60 * 100,
-  max: 50,
-});
-
+app.use(cors(corsOptions));
 app.use(cors(corsOptions));
 
+// Middleware to handle preflight requests
+app.options("*", cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride());
 app.use(helmet());
-app.use(rateLimiter);
 
 app.use(
   mongoSanitize({
@@ -102,6 +106,13 @@ app.use("/", (err, req, res, next) => {
   res.status(500).send("Backend Error!");
   return next(err);
 });
+
+const rateLimiter = RateLimit({
+  windowMs: 1 * 60 * 100,
+  max: 50,
+});
+
+app.use(rateLimiter);
 
 //MiddleWare for checking authorized users
 app.use((req, res, next) => {
