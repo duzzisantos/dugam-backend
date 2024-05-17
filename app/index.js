@@ -23,13 +23,12 @@ db.mongoose
   });
 
 const isLocal = process.env.NODE_ENV === "development";
-const isProduction = process.env.NODE_ENV === "production";
 
 var corsOptions = {
-  origin: isLocal
-    ? "http://localhost:3000/"
-    : isProduction && process.env.CLIENT_HOSTNAME,
+  origin: isLocal ? "http://localhost:3000/" : process.env.CLIENT_HOSTNAME,
   methods: "GET, POST, PUT, DELETE",
+  allowedHeaders: ["Content-Type", "Authorization"], // Add required headers
+  credentials: true, // If you need to include cookies in CORS requests
 };
 
 app.use(cors(corsOptions));
