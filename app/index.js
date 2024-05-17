@@ -7,6 +7,7 @@ const { jwtDecode } = require("jwt-decode");
 const db = require("../models");
 const helmet = require("helmet");
 const mongoSanitize = require("express-mongo-sanitize");
+const RateLimit = require("express-rate-limit");
 
 //database connection settings
 db.mongoose
@@ -30,9 +31,15 @@ var corsOptions = {
   credentials: true, // If you need to include cookies in CORS requests
 };
 
+const limiter = RateLimit({
+  windowMs: 1 * 60 * 100,
+  max: 50,
+});
+
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(limiter);
 app.use(helmet());
 
 app.use(
