@@ -7,15 +7,11 @@ const { jwtDecode } = require("jwt-decode");
 const RateLimit = require("express-rate-limit");
 const db = require("../models");
 const helmet = require("helmet");
-const compression = require("compression");
 const mongoSanitize = require("express-mongo-sanitize");
 
 //database connection settings
 db.mongoose
-  .connect(db.url ?? process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+  .connect(db.url ?? process.env.MONGO_URI)
   .then(() => {
     console.log("Connection established with database");
   })
@@ -26,24 +22,26 @@ db.mongoose
     }
   });
 
-// const isLocal = process.env.NODE_ENV === "development";
-// const isProduction = process.env.NODE_ENV === "production";
+const isLocal = process.env.NODE_ENV === "development";
+const isProduction = process.env.NODE_ENV === "production";
 
 var corsOptions = {
-  origin: "http://localhost:3000" ?? process.env.CLIENT_HOSTNAME,
+  origin: isLocal
+    ? "http://localhost:3000/"
+    : isProduction && process.env.CLIENT_HOSTNAME,
   methods: "GET, POST, PUT, DELETE",
 };
+
+app.use(cors(corsOptions));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(helmet());
 
 const rateLimiter = RateLimit({
   windowMs: 1 * 60 * 100,
   max: 20,
 });
 
-app.use(cors(corsOptions));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(compression);
-app.use(helmet());
 app.use(rateLimiter);
 
 app.use(
@@ -57,7 +55,7 @@ app.use(
     useDefaults: false,
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "http://localhost:3000"], //only scripts from this host
+      scriptSrc: ["'self'", "http://localhost:3000/"], //only scripts from this host
       styleSrc: ["'self'"],
       imgSrc: ["'self'"],
       upgradeInsecureRequests: [],
