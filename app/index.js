@@ -4,7 +4,6 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 const { jwtDecode } = require("jwt-decode");
-const RateLimit = require("express-rate-limit");
 const db = require("../models");
 const helmet = require("helmet");
 const mongoSanitize = require("express-mongo-sanitize");
@@ -25,7 +24,7 @@ db.mongoose
 const isLocal = process.env.NODE_ENV === "development";
 
 var corsOptions = {
-  origin: isLocal ? "http://localhost:3000/" : process.env.CLIENT_HOSTNAME,
+  origin: isLocal ? "http://localhost:3000" : process.env.CLIENT_HOSTNAME,
   methods: "GET, POST, PUT, DELETE",
   allowedHeaders: ["Content-Type", "Authorization"], // Add required headers
   credentials: true, // If you need to include cookies in CORS requests
@@ -35,13 +34,6 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
-
-const rateLimiter = RateLimit({
-  windowMs: 1 * 60 * 100,
-  max: 20,
-});
-
-app.use(rateLimiter);
 
 app.use(
   mongoSanitize({
