@@ -109,6 +109,6 @@ app.use("/", (err, req, res, next) => {
 // });
 
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, (err) => {
+app.listen(PORT, "0.0.0.0", (err) => {
   !err ? console.log("LISTENING TO PORT", PORT) : console.log(err);
 });
