@@ -3,6 +3,7 @@ process.env.NODE_ENV = "production";
 const express = require("express");
 const app = express();
 const cors = require("cors");
+const { jwtDecode } = require("jwt-decode");
 const db = require("../models");
 const helmet = require("helmet");
 const mongoSanitize = require("express-mongo-sanitize");
@@ -90,23 +91,23 @@ app.use("/", (err, req, res, next) => {
   return next(err);
 });
 
-//MiddleWare for checking authorized users
-// app.use((req, res, next) => {
-//   const token =
-//     req.headers.authorization && req.headers.authorization.split(" ")[1];
-//   if (!token) {
-//     return res.status(401).json({ message: "Unauthorized Access" });
-//   }
+// MiddleWare for checking authorized users
+app.use((req, res, next) => {
+  const token =
+    req.headers.authorization && req.headers.authorization.split(" ")[1];
+  if (!token) {
+    return res.status(401).json({ message: "Unauthorized Access" });
+  }
 
-//   const decodedToken = jwtDecode(token);
+  const decodedToken = jwtDecode(token);
 
-//   if (decodedToken.aud === process.env.AUTHORIZATION_AUD) {
-//     req.decodedToken = decodedToken;
-//     next();
-//   } else {
-//     res.status(401).json({ message: "Unauthorized Access" });
-//   }
-// });
+  if (decodedToken.aud === process.env.AUTHORIZATION_AUD) {
+    req.decodedToken = decodedToken;
+    next();
+  } else {
+    res.status(401).json({ message: "Unauthorized Access" });
+  }
+});
 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, "0.0.0.0", (err) => {
