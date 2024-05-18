@@ -19,8 +19,6 @@ exports.createBusiness = async (req, res) => {
       businessPhone,
       category,
       photos,
-      imageId,
-      image,
     } = req.body;
     const emailAddress = req.body.userEmail;
 
@@ -40,7 +38,7 @@ exports.createBusiness = async (req, res) => {
                 email,
                 businessPhone,
                 category,
-                photos: [{ imageId, image }],
+                photos,
               },
             },
           }

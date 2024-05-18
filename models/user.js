@@ -28,7 +28,7 @@ const UserAccount = new Schema(
         email: String,
         businessPhone: String,
         category: String,
-        photos: [{ imageId: String, image: String }],
+        photos: [{ image: String }],
       },
     ],
     ratings: [
@@ -63,6 +63,8 @@ const UserAccount = new Schema(
         authorName: String,
         contentBody: String,
         contentImage: String,
+        authorImage: String,
+        category: String,
         likes: [
           {
             likedUserName: String,
@@ -84,9 +86,11 @@ const UserAccount = new Schema(
     directMessages: [
       {
         sender: String,
+        receiver: String,
         subject: String,
         sendDate: String,
         messageBody: String,
+        clientUID: String,
         replies: [
           {
             repliedBy: String,

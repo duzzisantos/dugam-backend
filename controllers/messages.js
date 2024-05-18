@@ -10,6 +10,7 @@ exports.createMessage = async (req, res) => {
       sender,
       subject,
       sendDate,
+      receiver,
       messageBody,
       replies,
       repliedBy,
@@ -28,9 +29,11 @@ exports.createMessage = async (req, res) => {
               $push: {
                 directMessages: {
                   sender: sender,
+                  receiver: receiver,
                   subject: subject,
                   sendDate: sendDate,
                   messageBody: messageBody,
+                  clientUID: client,
                   replies: [{ repliedBy, replyDate, replyBody }],
                 },
               },
@@ -54,14 +57,29 @@ exports.createMessage = async (req, res) => {
   }
 };
 
-exports.getMessages = (req, res) => {
-  const client = req.query.clientUID;
+exports.getMessages = async (req, res) => {
+  const clientUID = req.query.clientUID;
 
-  if (client) {
-    User.find({ clientUID: client })
+  if (clientUID) {
+    const currentUser = await User.findOne({ clientUID: clientUID });
+    const currentUserEmail = currentUser.userEmail;
+
+    User.find()
       .then((data) => {
-        const messagesData = data.map((item) => item.directMessages);
-        res.json(messagesData);
+        const output = [];
+
+        data.forEach((element) => {
+          element.directMessages.forEach((item) => {
+            if (
+              item.sender === currentUserEmail ||
+              item.receiver === currentUserEmail
+            ) {
+              output.push(item);
+            }
+          });
+        });
+        res.json(output);
+        return output.flat();
       })
       .catch((err) => {
         console.error(err);
@@ -76,6 +94,8 @@ exports.replyMessages = async (req, res) => {
   const { replyDate, replyBody, repliedBy } = req.body;
   const client = req.query.clientUID;
   const messageId = req.query.id; // Assuming messageId is a route parameter
+
+  console.log({ client, messageId, repliedBy });
 
   try {
     const updatedUser = await User.findOneAndUpdate(

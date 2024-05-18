@@ -37,6 +37,9 @@ exports.createUserContent = async (req, res) => {
                 contentImage,
                 likes: [{ likedUserName }],
                 isBookmarked,
+                category: selectedUser.registeredBusinesses[0].category,
+                authorImage:
+                  selectedUser.registeredBusinesses[0].photos[0].image,
               },
             },
           }
