@@ -9,7 +9,6 @@ const UserAccount = new Schema(
     },
     clientUID: {
       type: String,
-      unique: true,
     },
     userEmail: {
       type: String,

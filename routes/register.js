@@ -9,5 +9,6 @@ module.exports = (app) => {
   router.get("/categories", registration.getAllBusinessCategories);
   router.get("/cities", registration.getAllCities);
   router.get("/regions", registration.getAllStates);
+  router.get("/grouped", registration.getBusinessByLocation);
   app.use("/api/register", router);
 };

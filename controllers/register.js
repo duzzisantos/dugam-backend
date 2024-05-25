@@ -147,6 +147,35 @@ exports.getAllStates = (req, res) => {
     });
 };
 
+exports.getBusinessByLocation = (req, res) => {
+  const vendorID = req.query.id;
+  var condition = vendorID
+    ? { $regex: new RegExp(vendorID), $options: "i" }
+    : {};
+
+  User.find(condition)
+    .then((data) => {
+      const registeredBusinesses = data
+        .map((el) => el.registeredBusinesses[0])
+        .map((item) => ({
+          category: item?.category,
+          city: item?.city,
+          state: item?.state,
+        }));
+
+      const groupedBusinessByLocation = Object.groupBy(
+        registeredBusinesses,
+        ({ state }) => state
+      );
+      res.json(groupedBusinessByLocation);
+    })
+    .catch((err) => {
+      res
+        .status(500)
+        .json({ message: err.message || "Error in retrieving data" });
+    });
+};
+
 exports.findOne = async (req, res) => {
   try {
     const client = req.query.clientUID;
