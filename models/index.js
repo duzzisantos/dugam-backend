@@ -1,3 +1,4 @@
+//index for data models
 const dbConfig = require("../config");
 const mongoose = require("mongoose");
 mongoose.Promise = global.Promise;
