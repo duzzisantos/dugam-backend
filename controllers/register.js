@@ -1,4 +1,6 @@
 const User = require("../models/user");
+const groupBy = require("core-js/actual/array/group-by");
+
 exports.createBusiness = async (req, res) => {
   if (!req.body) {
     res.status(400).json({
@@ -163,10 +165,12 @@ exports.getBusinessByLocation = (req, res) => {
           state: item?.state,
         }));
 
-      const groupedBusinessByLocation = Object.groupBy(
+      const groupedBusinessByLocation = groupBy(
         registeredBusinesses,
         ({ state }) => state
       );
+
+      console.log(groupedBusinessByLocation);
       res.json(groupedBusinessByLocation);
     })
     .catch((err) => {
