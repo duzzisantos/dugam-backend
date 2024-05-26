@@ -1,5 +1,4 @@
 const User = require("../models/user");
-const groupBy = require("../utilities/groupBy");
 exports.createBusiness = async (req, res) => {
   if (!req.body) {
     res.status(400).json({
@@ -164,7 +163,10 @@ exports.getBusinessByLocation = (req, res) => {
           state: item?.state,
         }));
 
-      const groupedBusinessByLocation = groupBy(registeredBusinesses, "state");
+      const groupedBusinessByLocation = Object.groupBy(
+        registeredBusinesses,
+        ({ state }) => state
+      );
       res.json(groupedBusinessByLocation);
     })
     .catch((err) => {
