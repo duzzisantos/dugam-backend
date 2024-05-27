@@ -170,7 +170,6 @@ exports.getBusinessByLocation = (req, res) => {
         ({ state }) => state
       );
 
-      console.log(groupedBusinessByLocation);
       res.json(groupedBusinessByLocation);
     })
     .catch((err) => {
