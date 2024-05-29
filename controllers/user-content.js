@@ -305,3 +305,72 @@ exports.suggestedFollowers = async (req, res) => {
     });
   }
 };
+
+exports.deleteOnePost = async (req, res) => {
+  //Handle error when query params are neither provided nor defined
+  const id = req.query.id;
+  const client = req.query.userEmail;
+  const currentUser = await User.findOne({ userEmail: client });
+
+  if (currentUser) {
+    await User.updateOne(
+      { userEmail: client },
+      {
+        $pull: {
+          userContent: { _id: id },
+        },
+      }
+    );
+    res.status(200).json({ message: "Successfully deleted post." });
+  } else {
+    console.log("this did not work");
+    res.status(500).json({ message: "Internal server error." });
+  }
+};
+
+//Update one post
+
+exports.editPost = async (req, res) => {
+  //Handle error when query params are neither provided nor defined
+  if (!req.query || !req.body) {
+    res.status(400).json({
+      message: "Either Post ID, user, or request body is empty.",
+    });
+
+    return;
+  }
+
+  //Define query params
+  const { id, userEmail } = req.query;
+  const { isEdited, contentBody, contentImage } = req.body;
+  try {
+    const userToUpdate = await User.findOneAndUpdate(
+      {
+        userEmail: userEmail,
+        "userContent._id": id,
+      },
+      {
+        $set: {
+          "userContent.$.contentBody": contentBody,
+          "userContent.$.contentImage": contentImage,
+          "userContent.$.isEdited": isEdited,
+        },
+      },
+      { new: true }
+    );
+
+    if (userToUpdate) {
+      res.status(200).json({ message: "Post successfully edited." });
+    } else {
+      res
+        .status(404)
+        .json({ message: "Either user or Post ID was not found." });
+    }
+  } catch (err) {
+    res.status(500).json({
+      message:
+        "Internal Server Error! This operation could not be handled by the server." ??
+        err.message,
+    });
+  }
+};

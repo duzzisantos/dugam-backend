@@ -7,9 +7,11 @@ module.exports = (app) => {
   router.post("/like-post", user.sendLikePost);
   router.post("/unlike-post", user.unlikePost);
   router.post("/save-bookmark", user.saveBookmark);
+  router.post("/edit-post", user.editPost);
   router.get("/", user.getAllUserPosts);
   router.get("/comments", user.getPostComments);
   router.get("/subscribed-content", user.fetchAllPostsFromFollowedAccounts);
   router.get("/suggested-follows", user.suggestedFollowers);
+  router.post("/delete-post", user.deleteOnePost);
   app.use("/api/user-posts", router);
 };

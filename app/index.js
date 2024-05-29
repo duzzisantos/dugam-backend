@@ -33,7 +33,7 @@ var corsOptions = {
 
 const limiter = RateLimit({
   windowMs: 1 * 60 * 1000,
-  max: 120,
+  max: 1000,
   message:
     "There are too many requests from this IP Address. Please try again after some time.",
 });

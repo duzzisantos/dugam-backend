@@ -64,6 +64,7 @@ const UserAccount = new Schema(
         contentImage: String,
         authorImage: String,
         category: String,
+        isEdited: Boolean,
         likes: [
           {
             likedUserName: String,
@@ -78,6 +79,7 @@ const UserAccount = new Schema(
             commentBody: String,
             commentDate: String,
             commentBy: String,
+            isEdited: Boolean,
           },
         ],
       },
