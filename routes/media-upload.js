@@ -1,6 +1,9 @@
 const multer = require("multer");
 
-const { uploadOneFile } = require("../controllers/media-upload");
+const {
+  uploadOneFile,
+  getCustomerImages,
+} = require("../controllers/media-upload");
 
 module.exports = (app) => {
   var express = require("express");
@@ -9,6 +12,7 @@ module.exports = (app) => {
   const upload = multer({ storage: multer.memoryStorage() });
 
   router.post("/", upload.single("image"), uploadOneFile);
+  router.get("/", getCustomerImages);
 
   //set this router
   app.use("/api/upload-image", router);

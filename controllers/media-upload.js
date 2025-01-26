@@ -78,3 +78,27 @@ exports.uploadOneFile = async (req, res) => {
       .send({ error: "Failed to upload file", details: err.message });
   }
 };
+
+exports.getCustomerImages = async (req, res) => {
+  try {
+    if (!req.query.clientID) {
+      res.status(400).json({ message: "Bad Request" });
+      return;
+    }
+
+    //Index query to find from ascending order - for better performance and to avoid collection scan
+    const clientMedia = await MediaUpload.find({
+      clientID: req.query.clientID,
+    });
+
+    if (!clientMedia) {
+      res.status(404).json({ message: "Client or media not found" });
+    } else {
+      res.json(clientMedia);
+    }
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: err.message, status: "Internal Server Error" });
+  }
+};

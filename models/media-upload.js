@@ -21,4 +21,6 @@ const MediaUploadSchema = mongoose.Schema(
   }
 );
 
+MediaUploadSchema.index({ clientID: 1 });
+
 module.exports = mongoose.model("media-upload", MediaUploadSchema);
