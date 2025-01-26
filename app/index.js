@@ -2,121 +2,18 @@ require("dotenv").config();
 process.env.NODE_ENV = "production";
 const express = require("express");
 const app = express();
-const cors = require("cors");
-const { jwtDecode } = require("jwt-decode");
 const db = require("../models");
-const helmet = require("helmet");
-const mongoSanitize = require("express-mongo-sanitize");
-const RateLimit = require("express-rate-limit");
+const { handleAuthorization } = require("../utilities/handleAuthorization.js");
+const { handleError } = require("../utilities/handleError.js");
+const { handleProtect } = require("../utilities/handleProtection.js");
+const { useDataBase } = require("../utilities/useDataBase.js");
+const { useRoutes } = require("../utilities/useRoutes.js");
 
-//database connection settings
-db.mongoose
-  .connect(db.url ?? process.env.MONGO_URI)
-  .then(() => {
-    console.log("Connection established with database");
-  })
-  .catch((err) => {
-    if (err) {
-      console.log("Database connection error!", err);
-      process.exit();
-    }
-  });
-
-const isLocal = process.env.NODE_ENV === "development";
-
-var corsOptions = {
-  origin: isLocal ? "http://localhost:3000" : process.env.CLIENT_HOSTNAME,
-  methods: "GET, POST, PUT, DELETE",
-  allowedHeaders: ["Content-Type", "Authorization"], // Add required headers
-  credentials: true, // If you need to include cookies in CORS requests
-};
-
-const limiter = RateLimit({
-  windowMs: 1 * 60 * 1000,
-  max: 1000,
-  message:
-    "There are too many requests from this IP Address. Please try again after some time.",
-});
-
-app.use(cors(corsOptions));
-app.use(express.json({ limit: "100kb" }));
-app.use(express.urlencoded({ extended: true, limit: "100kb" }));
-app.use(limiter);
-app.use(helmet());
-
-app.use(
-  mongoSanitize({
-    replaceWith: "_",
-  })
-);
-
-app.use(
-  helmet.contentSecurityPolicy({
-    useDefaults: false,
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "http://localhost:3000/"], //only scripts from this host
-      styleSrc: ["'self'"],
-      imgSrc: ["'self'"],
-      upgradeInsecureRequests: [],
-      objectSrc: ["'none'"],
-    },
-  })
-);
-
-app.use(helmet.crossOriginEmbedderPolicy());
-app.use(
-  helmet.referrerPolicy({
-    options: "no referrer",
-  })
-);
-
-//https settings for secure connections
-app.use(
-  helmet.hsts({
-    maxAge: 15552000,
-    preload: true,
-    includeSubDomains: false,
-  })
-);
-
-app.use(helmet.noSniff()); //mitigates data sniffing by hackers
-app.use(helmet.xssFilter()); //prevents cross-site scripting
-
-//REST API routes
-require("../routes/register")(app);
-require("../routes/signup")(app);
-require("../routes/followers")(app);
-require("../routes/user-content")(app);
-require("../routes/ratings")(app);
-require("../routes/messages")(app);
-require("../routes/business-query")(app);
-require("../routes/report-logs")(app);
-
-//Error handler
-app.use("/", (err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).send("Backend Error!");
-  return next(err);
-});
-
-// MiddleWare for checking authorized users
-app.use((req, res, next) => {
-  const token =
-    req.headers.authorization && req.headers.authorization.split(" ")[1];
-  if (!token) {
-    return res.status(401).json({ message: "Unauthorized Access" });
-  }
-
-  const decodedToken = jwtDecode(token);
-
-  if (decodedToken.aud === process.env.AUTHORIZATION_AUD) {
-    req.decodedToken = decodedToken;
-    next();
-  } else {
-    res.status(401).json({ message: "Unauthorized Access" });
-  }
-});
+useDataBase(db);
+handleProtect(app, express);
+useRoutes(app);
+handleError(app);
+handleAuthorization(app);
 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, "0.0.0.0", (err) => {
