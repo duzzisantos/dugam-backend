@@ -1,6 +1,5 @@
 const User = require("../models/user");
 const groupBy = require("core-js/actual/array/group-by");
-const { uploadOneFile } = require("./media-upload");
 
 exports.createBusiness = async (req, res) => {
   if (!req.body) {
@@ -23,9 +22,6 @@ exports.createBusiness = async (req, res) => {
       category,
     } = req.body;
     const emailAddress = req.body.userEmail;
-    const downloadURL = uploadOneFile(req, res)
-      .then(() => res)
-      .catch((err) => console.error(err));
 
     try {
       const foundUser = await User.findOne({ userEmail: emailAddress });
@@ -43,7 +39,6 @@ exports.createBusiness = async (req, res) => {
                 email,
                 businessPhone,
                 category,
-                photos: downloadURL,
               },
             },
           }

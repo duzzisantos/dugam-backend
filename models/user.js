@@ -27,7 +27,6 @@ const UserAccount = new Schema(
         email: String,
         businessPhone: String,
         category: String,
-        photos: [{ image: String }],
       },
     ],
     ratings: [
