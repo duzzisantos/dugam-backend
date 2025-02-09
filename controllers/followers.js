@@ -141,7 +141,6 @@ exports.unfollowOneUser = async (req, res) => {
           followers: {
             follower: userEmail,
             followerName: currentName,
-            isFollower: true,
           },
         },
       },
@@ -155,7 +154,6 @@ exports.unfollowOneUser = async (req, res) => {
           following: {
             follower: secondParty,
             followerName: secondPartyName,
-            isFollowing: true,
           },
         },
       },
