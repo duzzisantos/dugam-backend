@@ -18,16 +18,18 @@ exports.createBusiness = async (req, res) => {
       businessName,
       address,
       email,
+      city,
+      state,
       businessPhone,
       category,
     } = req.body;
-    const emailAddress = req.body.userEmail;
+    const clientUID = req.body.clientUID;
 
     try {
-      const foundUser = await User.findOne({ userEmail: emailAddress });
+      const foundUser = await User.findOne({ clientUID: clientUID });
       if (foundUser) {
         await User.updateOne(
-          { userEmail: emailAddress },
+          { clientUID: clientUID },
           {
             $push: {
               registeredBusinesses: {
@@ -36,6 +38,8 @@ exports.createBusiness = async (req, res) => {
                 lastName,
                 businessName,
                 address,
+                city,
+                state,
                 email,
                 businessPhone,
                 category,

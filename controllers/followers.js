@@ -263,19 +263,30 @@ exports.getSuggestedFollows = async (req, res) => {
           client.registeredBusinesses,
         ];
 
+        //Return businesses which isfollowing equals false, so that frontend
+        //does not need to do any further filtering
         const businessWithFewDetails = clientBusiness.map((el) => ({
-          //this is the whole point. We do not want to render unnecessary data
           businessName: el.businessName,
           category: el.category,
           clientUID: client.clientUID,
           userEmail: client.userEmail,
         }));
 
-        if (followers.some((person) => person.follower === clientUID)) {
+        if (
+          following.find(
+            (person) =>
+              person.follower === clientUID && person.isFollowing === true
+          ) &&
+          followers.find(
+            (person) =>
+              person.follower === clientUID && person.isFollower === true
+          )
+        ) {
           return [];
-        } else if (following.some((person) => person.follower === clientUID)) {
-          return [];
-        } else {
+        } else if (
+          following.some((person) => person.follower !== clientUID) &&
+          followers.some((person) => person.follower !== clientUID)
+        ) {
           suggested.push(businessWithFewDetails);
         }
       });
@@ -283,6 +294,6 @@ exports.getSuggestedFollows = async (req, res) => {
     }
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Internal Server Error" });
+    res.status(500).json({ message: "Internal Server Error", cause: err });
   }
 };
