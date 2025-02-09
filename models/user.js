@@ -7,7 +7,7 @@ const UserAccount = new Schema(
       type: String,
       unique: true,
     },
-    clientID: {
+    clientUID: {
       type: String,
       unique: true,
     },
