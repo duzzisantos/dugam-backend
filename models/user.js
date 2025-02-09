@@ -7,8 +7,9 @@ const UserAccount = new Schema(
       type: String,
       unique: true,
     },
-    clientUID: {
+    clientID: {
       type: String,
+      unique: true,
     },
     userEmail: {
       type: String,
@@ -103,5 +104,5 @@ const UserAccount = new Schema(
   },
   { timestamps: true }
 );
-
+UserAccount.index({ clientUID: 1, userEmail: 1, userId: 1 });
 module.exports = mongoose.model("user", UserAccount);

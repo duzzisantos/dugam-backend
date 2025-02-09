@@ -25,4 +25,6 @@ const ReportLogs = new Schema(
   { timestamps: true }
 );
 
+ReportLogs.index({ reportedContentId: 1 });
+
 module.exports = mongoose.model("report_log", ReportLogs);
