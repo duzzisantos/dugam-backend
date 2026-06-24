@@ -1,86 +1,62 @@
-const User = require("../models/user");
+const Business = require("../models/business");
 
-//performs general search to find out if any of the search queries match any of the registered businesses.
-//this should also return a paginated result which shall be controlled in the frontend
-exports.getBusinessByAnyParameter = (req, res) => {
+exports.getBusinessByAnyParameter = async (req, res) => {
   const searchTerm = req.query.searchTerm;
-  const id = req.query.id;
-  var regex = id ? { $regex: new RegExp(enterprise.id), $options: "gi" } : {};
 
-  User.find(regex)
-    .then((data) => {
-      const output = [];
-      const escapedSearchTerm = searchTerm.replace(
-        /[.*+?^${}()|[\]\\]/g,
-        "\\$&"
-      );
+  if (!searchTerm) {
+    return res.status(400).json({ message: "Search term is required" });
+  }
 
-      // create a case-insensitive regular expression with word boundary
-      const regex = new RegExp("\\b" + escapedSearchTerm + "\\b", "i");
+  try {
+    const escapedSearchTerm = searchTerm.replace(
+      /[.*+?^${}()|[\]\\]/g,
+      "\\$&"
+    );
+    const regex = new RegExp("\\b" + escapedSearchTerm + "\\b", "i");
 
-      for (const business of data) {
-        if (
-          business.registeredBusinesses.length ||
-          business.registeredBusinesses
-        ) {
-          const businessMatches = business.registeredBusinesses.some(
-            (enterprise) =>
-              regex.test(enterprise.firstName) ||
-              regex.test(enterprise.lastName) ||
-              regex.test(enterprise.city) ||
-              regex.test(enterprise.category) ||
-              regex.test(enterprise.businessName) ||
-              regex.test(enterprise.state)
-          );
+    const businesses = await Business.find({
+      $or: [
+        { firstName: regex },
+        { lastName: regex },
+        { city: regex },
+        { category: regex },
+        { businessName: regex },
+        { state: regex },
+      ],
+    }).lean();
 
-          if (businessMatches) {
-            output.push(business.registeredBusinesses);
-          }
-        } else {
-          res.status(404).json({ message: "Business not found" }); // remove this feedback if it fails the app
-        }
-      }
-      res.json(output.flat());
-    })
-    .catch((err) => {
-      console.warn(err);
-    });
+    res.json(businesses);
+  } catch (err) {
+    console.warn(err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
 };
 
-//performs narrow exact search to filter out customers who fall under a specific region/state, city and business category
-exports.getBusinessByLimitedSearch = (req, res) => {
+exports.getBusinessByLimitedSearch = async (req, res) => {
   const { region, city, category } = req.query;
 
-  const id = req.query.id;
-  var regex = id ? { $regex: new RegExp(enterprise.id), $options: "i" } : {};
+  if (!region || !city || !category) {
+    return res
+      .status(400)
+      .json({ message: "Region, city, and category are required" });
+  }
 
-  User.find(regex)
-    .then((data) => {
-      const searchResult = [];
+  try {
+    const businesses = await Business.find({
+      city,
+      state: region,
+      category,
+    }).lean();
 
-      for (const business of data) {
-        if (
-          business.registeredBusinesses ||
-          business.registeredBusinesses.length
-        ) {
-          const businessExists = business.registeredBusinesses.some(
-            (item) =>
-              item.city === city &&
-              item.state === region &&
-              item.category === category
-          );
+    if (!businesses.length) {
+      return res
+        .status(404)
+        .json({ message: "None of the search items was found" });
+    }
 
-          if (businessExists) {
-            searchResult.push(business.registeredBusinesses);
-          }
-        } else {
-          res
-            .status(404)
-            .json({ message: "None of the search items was found" });
-        }
-      }
-
-      return res.json(searchResult.flat());
-    })
-    .catch((err) => console.error(err));
+    res.json(businesses);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
 };

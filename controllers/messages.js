@@ -1,124 +1,107 @@
 const User = require("../models/user");
+const Message = require("../models/message");
 
 exports.createMessage = async (req, res) => {
   if (!req.body) {
-    throw new Error("Message cannot be empty");
+    return res.status(400).json({ message: "Message cannot be empty" });
   }
 
-  if (req.body.clientUID) {
-    const {
-      sender,
-      subject,
-      sendDate,
-      receiver,
-      messageBody,
-      replies,
-      repliedBy,
-      replyDate,
-      replyBody,
-    } = req.body;
-
-    const client = req.body.clientUID;
-    if (client) {
-      try {
-        const foundUser = await User.findOne({ clientUID: client });
-        if (foundUser) {
-          await User.updateOne(
-            { clientUID: client },
-            {
-              $push: {
-                directMessages: {
-                  sender: sender,
-                  receiver: receiver,
-                  subject: subject,
-                  sendDate: sendDate,
-                  messageBody: messageBody,
-                  clientUID: client,
-                  replies: [{ repliedBy, replyDate, replyBody }],
-                },
-              },
-            }
-          );
-          res
-            .status(200)
-            .json({ message: "Successfully exchanged direct messages" });
-        } else {
-          res.status(404).json({ message: "Recipient not found" });
-        }
-      } catch (err) {
-        res.status(500).json({ message: "Internal Server Error" });
-      }
-    }
-  } else {
-    res.status(400).json({
+  if (!req.body.clientUID) {
+    return res.status(400).json({
       message:
         "User email for making this request is not contained in the request body.",
     });
+  }
+
+  const {
+    sender,
+    subject,
+    sendDate,
+    receiver,
+    messageBody,
+    repliedBy,
+    replyDate,
+    replyBody,
+    clientUID,
+  } = req.body;
+
+  try {
+    const foundUser = await User.findOne({ clientUID });
+    if (!foundUser) {
+      return res.status(404).json({ message: "Recipient not found" });
+    }
+
+    await Message.create({
+      sender,
+      receiver,
+      subject,
+      sendDate,
+      messageBody,
+      clientUID,
+      replies: repliedBy ? [{ repliedBy, replyDate, replyBody }] : [],
+    });
+
+    res
+      .status(200)
+      .json({ message: "Successfully exchanged direct messages" });
+  } catch (err) {
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
 exports.getMessages = async (req, res) => {
   const clientUID = req.query.clientUID;
 
-  if (clientUID) {
-    const currentUser = await User.findOne({ clientUID: clientUID });
-    const currentUserEmail = currentUser.userEmail;
+  if (!clientUID) {
+    return res.status(400).json({ message: "Client UID is required" });
+  }
 
-    User.find()
-      .then((data) => {
-        const output = [];
+  try {
+    const currentUser = await User.findOne({ clientUID });
+    if (!currentUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
-        data.forEach((element) => {
-          element.directMessages.forEach((item) => {
-            if (
-              item.sender === currentUserEmail ||
-              item.receiver === currentUserEmail
-            ) {
-              output.push(item);
-            }
-          });
-        });
-        res.json(output);
-        return output.flat();
-      })
-      .catch((err) => {
-        console.error(err);
-        res.status(400).json({ message: "An error has occured." });
-      });
-  } else {
+    const messages = await Message.find({
+      $or: [
+        { sender: currentUser.userEmail },
+        { receiver: currentUser.userEmail },
+      ],
+    }).lean();
+
+    res.json(messages);
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
 exports.replyMessages = async (req, res) => {
   const { replyDate, replyBody, repliedBy } = req.body;
-  const client = req.query.clientUID;
-  const messageId = req.query.id; // Assuming messageId is a route parameter
+  const messageId = req.query.id;
 
-  console.log({ client, messageId, repliedBy });
+  if (!messageId) {
+    return res.status(400).json({ message: "Message ID is required" });
+  }
 
   try {
-    const updatedUser = await User.findOneAndUpdate(
-      { clientUID: client, "directMessages._id": messageId },
+    const updatedMessage = await Message.findByIdAndUpdate(
+      messageId,
       {
         $push: {
-          "directMessages.$.replies": {
-            repliedBy: repliedBy,
-            replyDate: replyDate,
-            replyBody: replyBody,
-          },
+          replies: { repliedBy, replyDate, replyBody },
         },
       },
-      { new: true } // To return the updated document
+      { new: true }
     );
 
-    if (updatedUser) {
-      res.status(200).json({ message: "Successfully replied to the message" });
-    } else {
-      res
+    if (!updatedMessage) {
+      return res
         .status(404)
-        .json({ message: "Direct message not found or user not found" });
+        .json({ message: "Direct message not found" });
     }
+
+    res.status(200).json({ message: "Successfully replied to the message" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Internal server error" });
