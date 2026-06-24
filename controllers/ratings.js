@@ -1,17 +1,15 @@
 const User = require("../models/user");
 const Rating = require("../models/rating");
+const { invalidateCache } = require("../middleware/cache");
+const { success, error, notFound, badRequest } = require("../utilities/response");
 
 exports.createRating = async (req, res) => {
   if (!req.body) {
-    return res
-      .status(400)
-      .json({ message: "Request body for ratings is empty!" });
+    return badRequest(res, "Request body for ratings is empty!");
   }
 
   if (!req.body.ratingsOwner) {
-    return res
-      .status(400)
-      .json({ message: "Request body is missing the required field" });
+    return badRequest(res, "Request body is missing the required field");
   }
 
   const {
@@ -26,12 +24,10 @@ exports.createRating = async (req, res) => {
   try {
     const userExists = await User.findOne({ userEmail: ratingsOwner });
     if (!userExists) {
-      return res
-        .status(404)
-        .json({ message: "User not found. Ratings cannot be added." });
+      return notFound(res, "User not found. Ratings cannot be added.");
     }
 
-    await Rating.create({
+    const rating = await Rating.create({
       ratingsOwner,
       ratedBy,
       ratingsTitle,
@@ -40,21 +36,22 @@ exports.createRating = async (req, res) => {
       ratingsDate,
     });
 
-    res.status(200).json({ message: "Ratings successfully added" });
+    invalidateCache("ratings");
+    invalidateCache("received-ratings");
+
+    return success(res, rating, "Ratings successfully added");
   } catch (err) {
     console.warn(err);
-    res.status(500).json({ message: "Internal Server Error" });
+    return error(res);
   }
 };
 
 exports.getAllRatings = async (req, res) => {
   try {
     const ratings = await Rating.find().lean();
-    res.json(ratings);
+    return success(res, ratings);
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: err.message || "Error in retrieving all vendors" });
+    return error(res, err.message || "Error in retrieving ratings");
   }
 };
 
@@ -62,15 +59,15 @@ exports.getReceivedRatings = async (req, res) => {
   const client = req.query.userEmail;
 
   if (!client) {
-    return res.status(400).json({ message: "User email is required" });
+    return badRequest(res, "User email is required");
   }
 
   try {
     const ratings = await Rating.find({ ratingsOwner: client }).lean();
-    res.json(ratings);
+    return success(res, ratings);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Internal Server Error" });
+    return error(res);
   }
 };
 
@@ -87,13 +84,16 @@ exports.updateOneRating = async (req, res) => {
     );
 
     if (!rating) {
-      return res.status(404).json({ message: "Rating not found" });
+      return notFound(res, "Rating not found");
     }
 
-    res.status(200).json({ message: "Successfully updated ratings" });
+    invalidateCache("ratings");
+    invalidateCache("received-ratings");
+
+    return success(res, rating, "Successfully updated ratings");
   } catch (err) {
     console.log(err);
-    res.status(500).json({ message: "Internal Server Error" });
+    return error(res);
   }
 };
 
@@ -103,16 +103,15 @@ exports.deleteOneRating = async (req, res) => {
   try {
     const deleted = await Rating.findByIdAndDelete(id);
     if (!deleted) {
-      return res
-        .status(404)
-        .json({ message: "Resource not found. No ratings to delete." });
+      return notFound(res, "Resource not found. No ratings to delete.");
     }
 
-    res.status(200).json({ message: "Successfully deleted rating" });
+    invalidateCache("ratings");
+    invalidateCache("received-ratings");
+
+    return success(res, null, "Successfully deleted rating");
   } catch (err) {
     console.error(err);
-    res
-      .status(404)
-      .json({ message: "Resource not found. No ratings to delete." });
+    return notFound(res, "Resource not found. No ratings to delete.");
   }
 };

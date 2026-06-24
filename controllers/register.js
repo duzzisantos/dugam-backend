@@ -1,18 +1,15 @@
 const User = require("../models/user");
 const Business = require("../models/business");
+const { invalidateCache } = require("../middleware/cache");
+const { success, error, notFound, badRequest } = require("../utilities/response");
 
 exports.createBusiness = async (req, res) => {
   if (!req.body) {
-    return res.status(400).json({
-      message:
-        "Request body cannot be empty. You must fill the registration form!",
-    });
+    return badRequest(res, "Request body cannot be empty. You must fill the registration form!");
   }
 
   if (!req.body.userName || !req.body.userId || !req.body.userEmail) {
-    return res
-      .status(400)
-      .json({ message: "Certain fields on the form are missing" });
+    return badRequest(res, "Certain fields on the form are missing");
   }
 
   const {
@@ -32,9 +29,7 @@ exports.createBusiness = async (req, res) => {
   try {
     const foundUser = await User.findOne({ clientUID });
     if (!foundUser) {
-      return res
-        .status(404)
-        .json({ message: "User was not found. Please try again." });
+      return notFound(res, "User was not found. Please try again.");
     }
 
     const business = await Business.create({
@@ -53,56 +48,52 @@ exports.createBusiness = async (req, res) => {
       category,
     });
 
-    res
-      .status(200)
-      .json({ message: "Successfully registered new business", data: business });
+    invalidateCache("businesses");
+    invalidateCache("categories");
+    invalidateCache("cities");
+    invalidateCache("regions");
+    invalidateCache("grouped");
+
+    return success(res, business, "Successfully registered new business");
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Internal Server Error" });
+    return error(res);
   }
 };
 
 exports.findAll = async (req, res) => {
   try {
     const businesses = await Business.find().lean();
-    res.json(businesses);
+    return success(res, businesses);
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: err.message || "Error in retrieving all vendors" });
+    return error(res, err.message || "Error in retrieving all vendors");
   }
 };
 
 exports.getAllBusinessCategories = async (req, res) => {
   try {
     const categories = await Business.distinct("category");
-    res.json(categories);
+    return success(res, categories);
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: err.message || "Error in retrieving all categories" });
+    return error(res, err.message || "Error in retrieving all categories");
   }
 };
 
 exports.getAllCities = async (req, res) => {
   try {
     const cities = await Business.distinct("city");
-    res.json(cities);
+    return success(res, cities);
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: err.message || "Error in retrieving all categories" });
+    return error(res, err.message || "Error in retrieving all cities");
   }
 };
 
 exports.getAllStates = async (req, res) => {
   try {
     const states = await Business.distinct("state");
-    res.json(states);
+    return success(res, states);
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: err.message || "Error in retrieving all categories" });
+    return error(res, err.message || "Error in retrieving all states");
   }
 };
 
@@ -123,11 +114,9 @@ exports.getBusinessByLocation = async (req, res) => {
     for (const item of businesses) {
       grouped[item._id] = item.businesses;
     }
-    res.json(grouped);
+    return success(res, grouped);
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: err.message || "Error in retrieving data" });
+    return error(res, err.message || "Error in retrieving data");
   }
 };
 
@@ -135,25 +124,25 @@ exports.findOne = async (req, res) => {
   try {
     const client = req.query.clientUID;
     if (!client) {
-      return res.status(404).json({ message: "User not Found" });
+      return notFound(res, "User not found");
     }
 
     const businesses = await Business.find({ ownerClientUID: client }).lean();
-    res.json(businesses);
+    return success(res, businesses);
   } catch (err) {
-    res.status(500).json({ message: "Internal Server Error" });
+    return error(res);
   }
 };
 
 exports.update = async (req, res) => {
   if (!req.body) {
-    return res.status(400).json({ message: "Request body cannot be empty." });
+    return badRequest(res, "Request body cannot be empty.");
   }
 
   try {
     const client = req.query.clientUID;
     if (!client) {
-      return res.status(400).json({ message: "Client UID is required." });
+      return badRequest(res, "Client UID is required.");
     }
 
     const business = await Business.findOneAndUpdate(
@@ -163,13 +152,17 @@ exports.update = async (req, res) => {
     );
 
     if (!business) {
-      return res
-        .status(404)
-        .json({ message: "Registered business not found" });
+      return notFound(res, "Registered business not found");
     }
 
-    res.json(business);
+    invalidateCache("businesses");
+    invalidateCache("categories");
+    invalidateCache("cities");
+    invalidateCache("regions");
+    invalidateCache("grouped");
+
+    return success(res, business, "Successfully updated business");
   } catch (err) {
-    res.status(500).json({ message: "Internal Server Error" });
+    return error(res);
   }
 };

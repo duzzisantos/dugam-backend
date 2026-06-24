@@ -1,12 +1,12 @@
 const { jwtDecode } = require("jwt-decode");
+const { unauthorized } = require("./response");
 
 exports.handleAuthorization = (app) => {
-  // MiddleWare for checking authorized users
   app.use((req, res, next) => {
     const token =
       req.headers.authorization && req.headers.authorization.split(" ")[1];
     if (!token) {
-      return res.status(401).json({ message: "Unauthorized Access" });
+      return unauthorized(res);
     }
 
     const decodedToken = jwtDecode(token);
@@ -15,7 +15,7 @@ exports.handleAuthorization = (app) => {
       req.decodedToken = decodedToken;
       next();
     } else {
-      res.status(401).json({ message: "Unauthorized Access" });
+      return unauthorized(res);
     }
   });
 };

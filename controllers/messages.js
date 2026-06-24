@@ -1,16 +1,14 @@
 const User = require("../models/user");
 const Message = require("../models/message");
+const { success, error, notFound, badRequest } = require("../utilities/response");
 
 exports.createMessage = async (req, res) => {
   if (!req.body) {
-    return res.status(400).json({ message: "Message cannot be empty" });
+    return badRequest(res, "Message cannot be empty");
   }
 
   if (!req.body.clientUID) {
-    return res.status(400).json({
-      message:
-        "User email for making this request is not contained in the request body.",
-    });
+    return badRequest(res, "User email for making this request is not contained in the request body.");
   }
 
   const {
@@ -28,7 +26,7 @@ exports.createMessage = async (req, res) => {
   try {
     const foundUser = await User.findOne({ clientUID });
     if (!foundUser) {
-      return res.status(404).json({ message: "Recipient not found" });
+      return notFound(res, "Recipient not found");
     }
 
     await Message.create({
@@ -41,11 +39,9 @@ exports.createMessage = async (req, res) => {
       replies: repliedBy ? [{ repliedBy, replyDate, replyBody }] : [],
     });
 
-    res
-      .status(200)
-      .json({ message: "Successfully exchanged direct messages" });
+    return success(res, null, "Successfully exchanged direct messages");
   } catch (err) {
-    res.status(500).json({ message: "Internal Server Error" });
+    return error(res);
   }
 };
 
@@ -53,13 +49,13 @@ exports.getMessages = async (req, res) => {
   const clientUID = req.query.clientUID;
 
   if (!clientUID) {
-    return res.status(400).json({ message: "Client UID is required" });
+    return badRequest(res, "Client UID is required");
   }
 
   try {
     const currentUser = await User.findOne({ clientUID });
     if (!currentUser) {
-      return res.status(404).json({ message: "User not found" });
+      return notFound(res, "User not found");
     }
 
     const messages = await Message.find({
@@ -69,10 +65,10 @@ exports.getMessages = async (req, res) => {
       ],
     }).lean();
 
-    res.json(messages);
+    return success(res, messages);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Internal Server Error" });
+    return error(res);
   }
 };
 
@@ -81,7 +77,7 @@ exports.replyMessages = async (req, res) => {
   const messageId = req.query.id;
 
   if (!messageId) {
-    return res.status(400).json({ message: "Message ID is required" });
+    return badRequest(res, "Message ID is required");
   }
 
   try {
@@ -96,14 +92,12 @@ exports.replyMessages = async (req, res) => {
     );
 
     if (!updatedMessage) {
-      return res
-        .status(404)
-        .json({ message: "Direct message not found" });
+      return notFound(res, "Direct message not found");
     }
 
-    res.status(200).json({ message: "Successfully replied to the message" });
+    return success(res, updatedMessage, "Successfully replied to the message");
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Internal server error" });
+    return error(res);
   }
 };

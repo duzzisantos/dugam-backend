@@ -1,6 +1,7 @@
 const User = require("../models/user");
 const Follow = require("../models/follow");
 const Business = require("../models/business");
+const { success, error, notFound, badRequest } = require("../utilities/response");
 
 exports.followAnotherUser = async (req, res) => {
   if (
@@ -9,9 +10,7 @@ exports.followAnotherUser = async (req, res) => {
     !req.body.userEmail ||
     !req.body.secondPartyEmail
   ) {
-    return res.status(400).json({
-      message: "Request parameters cannot be empty.",
-    });
+    return badRequest(res, "Request parameters cannot be empty.");
   }
 
   const { secondParty, clientUID, userEmail, secondPartyEmail } = req.body;
@@ -23,7 +22,7 @@ exports.followAnotherUser = async (req, res) => {
     ]);
 
     if (!currentUser || !secondPartyUser) {
-      return res.status(404).json({ message: "User not found" });
+      return notFound(res, "User not found");
     }
 
     await Follow.create({
@@ -33,18 +32,16 @@ exports.followAnotherUser = async (req, res) => {
       followingName: secondPartyUser.userName,
     });
 
-    res.status(200).json({ message: "Followed user successfully" });
+    return success(res, null, "Followed user successfully");
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Internal Server Error" });
+    return error(res);
   }
 };
 
 exports.blockAnotherUser = async (req, res) => {
   if (!req.body.userEmail || !req.body.secondParty) {
-    return res.status(400).json({
-      message: "Bad Request. Query requires current user and second party.",
-    });
+    return badRequest(res, "Bad Request. Query requires current user and second party.");
   }
 
   const { userEmail, secondParty } = req.body;
@@ -57,18 +54,16 @@ exports.blockAnotherUser = async (req, res) => {
       ],
     });
 
-    res.status(200).json({ message: "Successfully blocked user" });
+    return success(res, null, "Successfully blocked user");
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Internal Server Error" });
+    return error(res);
   }
 };
 
 exports.unfollowOneUser = async (req, res) => {
   if (!req.body.secondParty || !req.body.userEmail) {
-    return res.status(400).json({
-      message: "Request parameters cannot be empty.",
-    });
+    return badRequest(res, "Request parameters cannot be empty.");
   }
 
   const { secondParty, userEmail } = req.body;
@@ -79,19 +74,17 @@ exports.unfollowOneUser = async (req, res) => {
       following: secondParty,
     });
 
-    res.status(200).json({ message: "Unfollowed user successfully" });
+    return success(res, null, "Unfollowed user successfully");
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Internal Server Error" });
+    return error(res);
   }
 };
 
 exports.updateFollowingList = async (req, res) => {
   try {
     if (!req.body || !req.body.clientUID) {
-      return res.status(400).json({
-        message: "Request body is missing or does not contain parameters.",
-      });
+      return badRequest(res, "Request body is missing or does not contain parameters.");
     }
 
     const { clientUID } = req.body;
@@ -99,7 +92,7 @@ exports.updateFollowingList = async (req, res) => {
     const followedUser = await User.findOne({ clientUID });
 
     if (!followedUser) {
-      return res.status(404).json({ message: "User not found." });
+      return notFound(res, "User not found.");
     }
 
     await Follow.findOneAndUpdate(
@@ -113,70 +106,62 @@ exports.updateFollowingList = async (req, res) => {
       { upsert: true, new: true }
     );
 
-    res
-      .status(200)
-      .json({ message: "Following list successfully updated." });
+    return success(res, null, "Following list successfully updated.");
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Internal Server Error." });
+    return error(res);
   }
 };
 
 exports.followerList = async (req, res) => {
   const client = req.query.clientUID;
   if (!client) {
-    return res.status(400).json({ message: "Client UID is required" });
+    return badRequest(res, "Client UID is required");
   }
 
   try {
     const user = await User.findOne({ clientUID: client });
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return notFound(res, "User not found");
     }
 
     const followers = await Follow.find({ following: user.userEmail }).lean();
-    res.json(followers);
+    return success(res, followers);
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: err.message ?? "Internal Server Error" });
+    return error(res, err.message ?? "Internal Server Error");
   }
 };
 
 exports.followingList = async (req, res) => {
   const client = req.query.clientUID;
   if (!client) {
-    return res.status(400).json({ message: "Client UID is required" });
+    return badRequest(res, "Client UID is required");
   }
 
   try {
     const user = await User.findOne({ clientUID: client });
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return notFound(res, "User not found");
     }
 
     const following = await Follow.find({ follower: user.userEmail }).lean();
-    res.json(following);
+    return success(res, following);
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: err.message ?? "Internal Server Error" });
+    return error(res, err.message ?? "Internal Server Error");
   }
 };
 
 exports.getSuggestedFollows = async (req, res) => {
   try {
     if (!req.query.clientUID) {
-      return res
-        .status(400)
-        .json({ message: "Request parameters cannot be empty" });
+      return badRequest(res, "Request parameters cannot be empty");
     }
 
     const { clientUID } = req.query;
     const currentUser = await User.findOne({ clientUID });
 
     if (!currentUser) {
-      return res.status(404).json({ message: "User not found" });
+      return notFound(res, "User not found");
     }
 
     const connections = await Follow.find({
@@ -200,9 +185,9 @@ exports.getSuggestedFollows = async (req, res) => {
       .limit(10)
       .lean();
 
-    res.json(suggestedBusinesses);
+    return success(res, suggestedBusinesses);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Internal Server Error", cause: err });
+    return error(res);
   }
 };

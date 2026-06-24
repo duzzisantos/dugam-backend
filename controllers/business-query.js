@@ -1,10 +1,11 @@
 const Business = require("../models/business");
+const { success, error, notFound, badRequest } = require("../utilities/response");
 
 exports.getBusinessByAnyParameter = async (req, res) => {
   const searchTerm = req.query.searchTerm;
 
   if (!searchTerm) {
-    return res.status(400).json({ message: "Search term is required" });
+    return badRequest(res, "Search term is required");
   }
 
   try {
@@ -25,10 +26,10 @@ exports.getBusinessByAnyParameter = async (req, res) => {
       ],
     }).lean();
 
-    res.json(businesses);
+    return success(res, businesses);
   } catch (err) {
     console.warn(err);
-    res.status(500).json({ message: "Internal Server Error" });
+    return error(res);
   }
 };
 
@@ -36,9 +37,7 @@ exports.getBusinessByLimitedSearch = async (req, res) => {
   const { region, city, category } = req.query;
 
   if (!region || !city || !category) {
-    return res
-      .status(400)
-      .json({ message: "Region, city, and category are required" });
+    return badRequest(res, "Region, city, and category are required");
   }
 
   try {
@@ -49,14 +48,12 @@ exports.getBusinessByLimitedSearch = async (req, res) => {
     }).lean();
 
     if (!businesses.length) {
-      return res
-        .status(404)
-        .json({ message: "None of the search items was found" });
+      return notFound(res, "None of the search items was found");
     }
 
-    res.json(businesses);
+    return success(res, businesses);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Internal Server Error" });
+    return error(res);
   }
 };

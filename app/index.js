@@ -8,9 +8,11 @@ const { handleError } = require("../utilities/handleError.js");
 const { handleProtect } = require("../utilities/handleProtection.js");
 const { useDataBase } = require("../utilities/useDataBase.js");
 const { useRoutes } = require("../utilities/useRoutes.js");
+const { observability } = require("../middleware/observability.js");
 
 useDataBase(db);
 handleProtect(app, express);
+app.use(observability);
 useRoutes(app);
 handleError(app);
 handleAuthorization(app);

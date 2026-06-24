@@ -2,18 +2,15 @@ const User = require("../models/user");
 const Post = require("../models/post");
 const Follow = require("../models/follow");
 const Business = require("../models/business");
+const { success, error, notFound, badRequest } = require("../utilities/response");
 
 exports.createUserContent = async (req, res) => {
   if (!req.body) {
-    return res.status(400).json({
-      message: "Request body cannot be empty. Content posting cannot be empty",
-    });
+    return badRequest(res, "Request body cannot be empty. Content posting cannot be empty");
   }
 
   if (!req.body.userEmail) {
-    return res
-      .status(400)
-      .json({ message: "Certain fields on the form are missing" });
+    return badRequest(res, "Certain fields on the form are missing");
   }
 
   const { contentBody, contentImage, authorEmail, authorName } = req.body;
@@ -22,16 +19,14 @@ exports.createUserContent = async (req, res) => {
   try {
     const selectedUser = await User.findOne({ userEmail: client });
     if (!selectedUser) {
-      return res
-        .status(404)
-        .json({ message: "User was not found. Please try again." });
+      return notFound(res, "User was not found. Please try again.");
     }
 
     const business = await Business.findOne({
       ownerEmail: client,
     }).lean();
 
-    await Post.create({
+    const post = await Post.create({
       authorEmail,
       authorName,
       authorClientUID: selectedUser.clientUID,
@@ -43,24 +38,24 @@ exports.createUserContent = async (req, res) => {
       comments: [],
     });
 
-    res.status(200).json({ message: "Successfully added a new post" });
+    return success(res, post, "Successfully added a new post");
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Internal Server Error" });
+    return error(res);
   }
 };
 
 exports.getAllUserPosts = async (req, res) => {
   const currentUser = req?.query?.userEmail;
   if (!currentUser) {
-    return res.status(400).json({ message: "User email is required" });
+    return badRequest(res, "User email is required");
   }
 
   try {
     const posts = await Post.find({ authorEmail: currentUser }).lean();
-    res.json(posts);
+    return success(res, posts);
   } catch (err) {
-    res.status(500).json({ message: "Internal Server Error" });
+    return error(res);
   }
 };
 
@@ -68,7 +63,7 @@ exports.fetchAllPostsFromFollowedAccounts = async (req, res) => {
   try {
     const currentUser = req?.query?.userEmail;
     if (!currentUser) {
-      return res.status(400).json({ message: "User email is required" });
+      return badRequest(res, "User email is required");
     }
 
     const connections = await Follow.find({
@@ -87,9 +82,9 @@ exports.fetchAllPostsFromFollowedAccounts = async (req, res) => {
       .sort({ createdAt: -1 })
       .lean();
 
-    res.json(posts);
+    return success(res, posts);
   } catch (err) {
-    res.status(500).json({ message: "Internal Server Error" });
+    return error(res);
   }
 };
 
@@ -98,7 +93,7 @@ exports.replyUserPost = async (req, res) => {
   const { commentDate, commentBody, commentBy } = req.body;
 
   if (!postId) {
-    return res.status(400).json({ message: "Post ID is required" });
+    return badRequest(res, "Post ID is required");
   }
 
   try {
@@ -113,14 +108,12 @@ exports.replyUserPost = async (req, res) => {
     );
 
     if (!post) {
-      return res
-        .status(404)
-        .json({ message: "Either user content or user was not found" });
+      return notFound(res, "Either user content or user was not found");
     }
 
-    res.status(200).json({ message: "User post successfully replied." });
+    return success(res, null, "User post successfully replied.");
   } catch (err) {
-    res.status(500).json({ message: "Internal server error" });
+    return error(res);
   }
 };
 
@@ -128,21 +121,19 @@ exports.getPostComments = async (req, res) => {
   const postId = req.query.id;
 
   if (!postId) {
-    return res.status(400).json({ message: "Post ID is required" });
+    return badRequest(res, "Post ID is required");
   }
 
   try {
     const post = await Post.findById(postId).lean();
     if (!post) {
-      return res
-        .status(404)
-        .json({ message: "Either Content or comments do not exist" });
+      return notFound(res, "Either Content or comments do not exist");
     }
 
-    res.json(post.comments);
+    return success(res, post.comments);
   } catch (err) {
     console.warn(err);
-    res.status(500).json({ message: "Internal Server Error" });
+    return error(res);
   }
 };
 
@@ -151,7 +142,7 @@ exports.sendLikePost = async (req, res) => {
   const { likedUserName, dateLiked } = req.body;
 
   if (!postId) {
-    return res.status(400).json({ message: "Post ID is required" });
+    return badRequest(res, "Post ID is required");
   }
 
   try {
@@ -171,14 +162,12 @@ exports.sendLikePost = async (req, res) => {
     );
 
     if (!post) {
-      return res
-        .status(404)
-        .json({ message: "Either user content or user was not found" });
+      return notFound(res, "Either user content or user was not found");
     }
 
-    res.status(200).json({ message: "User post successfully liked." });
+    return success(res, null, "User post successfully liked.");
   } catch (err) {
-    res.status(500).json({ message: "Internal server error" });
+    return error(res);
   }
 };
 
@@ -187,7 +176,7 @@ exports.unlikePost = async (req, res) => {
   const { likedUserName, dateLiked } = req.body;
 
   if (!postId) {
-    return res.status(400).json({ message: "Post ID is required" });
+    return badRequest(res, "Post ID is required");
   }
 
   try {
@@ -204,14 +193,12 @@ exports.unlikePost = async (req, res) => {
     );
 
     if (!post) {
-      return res
-        .status(404)
-        .json({ message: "Either user content or user was not found" });
+      return notFound(res, "Either user content or user was not found");
     }
 
-    res.status(200).json({ message: "User post successfully unliked." });
+    return success(res, null, "User post successfully unliked.");
   } catch (err) {
-    res.status(500).json({ message: "Internal server error" });
+    return error(res);
   }
 };
 
@@ -220,7 +207,7 @@ exports.saveBookmark = async (req, res) => {
   const { isBookmarked } = req.body;
 
   if (!postId) {
-    return res.status(400).json({ message: "Post ID is required" });
+    return badRequest(res, "Post ID is required");
   }
 
   try {
@@ -231,14 +218,12 @@ exports.saveBookmark = async (req, res) => {
     );
 
     if (!post) {
-      return res
-        .status(404)
-        .json({ message: "Either user content or user was not found" });
+      return notFound(res, "Either user content or user was not found");
     }
 
-    res.status(200).json({ message: "User post successfully bookmarked." });
+    return success(res, null, "User post successfully bookmarked.");
   } catch (err) {
-    res.status(500).json({ message: "Internal server error" });
+    return error(res);
   }
 };
 
@@ -246,12 +231,12 @@ exports.suggestedFollowers = async (req, res) => {
   try {
     const client = req.query.clientUID;
     if (!client) {
-      return res.status(400).json({ message: "Client UID is required" });
+      return badRequest(res, "Client UID is required");
     }
 
     const currentUser = await User.findOne({ clientUID: client });
     if (!currentUser) {
-      return res.status(404).json({ message: "User not found" });
+      return notFound(res, "User not found");
     }
 
     const connections = await Follow.find({
@@ -274,11 +259,9 @@ exports.suggestedFollowers = async (req, res) => {
       .limit(5)
       .lean();
 
-    res.json(suggestions);
+    return success(res, suggestions);
   } catch (err) {
-    res.status(404).json({
-      message: err.message || "User not found or no relationship with user",
-    });
+    return notFound(res, err.message || "User not found or no relationship with user");
   }
 };
 
@@ -287,9 +270,7 @@ exports.deleteOnePost = async (req, res) => {
   const client = req.query.userEmail;
 
   if (!id || !client) {
-    return res
-      .status(400)
-      .json({ message: "Post ID and user email are required" });
+    return badRequest(res, "Post ID and user email are required");
   }
 
   try {
@@ -299,21 +280,19 @@ exports.deleteOnePost = async (req, res) => {
     });
 
     if (!deleted) {
-      return res.status(404).json({ message: "Post not found" });
+      return notFound(res, "Post not found");
     }
 
-    res.status(200).json({ message: "Successfully deleted post." });
+    return success(res, null, "Successfully deleted post.");
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Internal server error." });
+    return error(res);
   }
 };
 
 exports.editPost = async (req, res) => {
   if (!req.query || !req.body) {
-    return res.status(400).json({
-      message: "Either Post ID, user, or request body is empty.",
-    });
+    return badRequest(res, "Either Post ID, user, or request body is empty.");
   }
 
   const { id } = req.query;
@@ -329,13 +308,11 @@ exports.editPost = async (req, res) => {
     );
 
     if (!post) {
-      return res
-        .status(404)
-        .json({ message: "Either user or Post ID was not found." });
+      return notFound(res, "Either user or Post ID was not found.");
     }
 
-    res.status(200).json({ message: "Post successfully edited." });
+    return success(res, post, "Post successfully edited.");
   } catch (err) {
-    res.status(500).json({ message: "Internal Server Error" });
+    return error(res);
   }
 };

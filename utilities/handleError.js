@@ -1,8 +1,8 @@
+const { error } = require("./response");
+
 exports.handleError = (app) => {
-  //Error handler
   app.use("/", (err, req, res, next) => {
     console.error(err.stack);
-    res.status(500).send("Backend Error!");
-    return next(err);
+    return error(res, "Backend Error!");
   });
 };

@@ -13,5 +13,6 @@ db.post = require("./post");
 db.message = require("./message");
 db.reportLogs = require("./report-logs");
 db.mediaUploads = require("./media-upload");
+db.apiLog = require("./api-log");
 
 module.exports = db;

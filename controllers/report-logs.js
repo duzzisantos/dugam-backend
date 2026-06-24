@@ -3,13 +3,12 @@ const Post = require("../models/post");
 const Report = require("../models/report-logs");
 const { getDelayedFeedback } = require("../utilities/getDelayedFeedback");
 const Sentiment = require("sentiment");
+const { success, error, notFound, badRequest } = require("../utilities/response");
 
 exports.createReport = async (req, res) => {
   try {
     if (!req.body) {
-      return res.status(400).json({
-        message: "Report log cannot be empty. Request body is required.",
-      });
+      return badRequest(res, "Report log cannot be empty. Request body is required.");
     }
 
     const email = req.query.userEmail;
@@ -18,12 +17,12 @@ exports.createReport = async (req, res) => {
 
     const foundUser = await User.findOne({ userEmail: email });
     if (!foundUser) {
-      return res.status(404).json({ message: "User not found" });
+      return notFound(res, "User not found");
     }
 
     const foundContent = await Post.findById(contentId);
     if (!foundContent) {
-      return res.status(404).json({ message: "Resource not found" });
+      return notFound(res, "Resource not found");
     }
 
     const sentiment = new Sentiment();
@@ -44,9 +43,9 @@ exports.createReport = async (req, res) => {
     });
 
     const data = await report.save();
-    res.json(data);
     getDelayedFeedback(data, User);
+    return success(res, data, "Report submitted successfully");
   } catch (err) {
-    res.status(500).json({ message: "Internal Server Error" });
+    return error(res);
   }
 };
